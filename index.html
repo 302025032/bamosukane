@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>バモスかね</title>
+<style>
+  :root {
+    --bg: #14161f; --panel: #1e2233; --panel2: #262b40; --fg: #eef0ff; --muted: #9aa0c4;
+    --line: rgba(255,255,255,0.14); --gold: #ffd25a; --accent: #6c8cff;
+    --c-ba: #ff5d6c; --c-mo: #ff9f43; --c-su: #2ecc71; --c-ka: #3fa7ff; --c-ne: #b57bff; --c-ko: #19c3b8; --c-fx: #e8e8e8;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: "Hiragino Sans", "Yu Gothic UI", sans-serif; }
+  body { min-height: 100vh; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  h1 { margin: 8px 0 16px; font-size: 28px; letter-spacing: 0.1em; text-align: center; }
+  h1 span:nth-child(1) { color: var(--c-ba); } h1 span:nth-child(2) { color: var(--c-mo); }
+  h1 span:nth-child(3) { color: var(--c-su); } h1 span:nth-child(4) { color: var(--c-ka); }
+  h1 span:nth-child(5) { color: var(--c-ne); } h1 span:nth-child(6) { color: var(--c-ko); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  input { width: 100%; padding: 10px; font-size: 16px; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; }
+  button { padding: 10px 16px; font-size: 15px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; cursor: pointer; font-weight: bold; }
+  button.sub { background: var(--panel2); border: 1px solid var(--line); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  .row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 120px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .rules { font-size: 14px; line-height: 1.7; }
+  .rules ul { margin: 4px 0; padding-left: 20px; }
+  .code { font-size: 32px; font-weight: bold; letter-spacing: 0.2em; color: var(--gold); text-align: center; margin: 8px 0; }
+
+  .zone-title { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; }
+  .hand { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; min-height: 112px; }
+  .card {
+    width: 76px; height: 108px; border-radius: 10px; background: #fbfbff; color: #222;
+    border: 3px solid var(--cc, #999); display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; user-select: none; transition: transform 0.12s, box-shadow 0.12s; padding: 4px;
+  }
+  .card .big { font-size: 40px; font-weight: 900; color: var(--cc); line-height: 1; }
+  .card .fxname { font-size: 15px; font-weight: 900; color: #333; }
+  .card .fxicon { font-size: 26px; line-height: 1.2; }
+  .card .fxdesc { font-size: 9.5px; color: #555; text-align: center; line-height: 1.25; margin-top: 3px; }
+  .card.fx { background: #fff8e1; border-color: #c9a227; }
+  .card.back { background: repeating-linear-gradient(45deg, #3b4270, #3b4270 6px, #2e3459 6px, #2e3459 12px); border-color: #555c8a; }
+  .card.small { width: 46px; height: 66px; }
+  .card.small .big { font-size: 24px; }
+  .card.small .fxname { font-size: 10px; }
+  .card.small .fxicon { font-size: 16px; }
+  .card.small .fxdesc { display: none; }
+  .card.clickable { cursor: pointer; }
+  .card.clickable:hover { transform: translateY(-4px); }
+  .card.selected { transform: translateY(-10px); box-shadow: 0 0 0 3px var(--gold), 0 8px 18px rgba(0,0,0,0.5); }
+  .card.new::after { content: "NEW"; position: absolute; top: -8px; right: -6px; background: var(--gold); color: #222; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 6px; }
+
+  .table { display: flex; gap: 16px; justify-content: center; align-items: center; margin: 8px 0; }
+  .pile { text-align: center; font-size: 12px; color: var(--muted); }
+  .pile .card { margin: 0 auto 4px; }
+  .empty { width: 76px; height: 108px; border: 2px dashed var(--line); border-radius: 10px; margin: 0 auto 4px; }
+
+  .status { text-align: center; font-size: 17px; font-weight: bold; padding: 10px; border-radius: 10px; background: var(--panel2); margin: 10px 0; }
+  .status.mine { background: #2f3d7a; box-shadow: 0 0 0 2px var(--accent); }
+  .status.win { background: #5a4a12; box-shadow: 0 0 0 2px var(--gold); color: var(--gold); font-size: 22px; }
+  .actionbar { display: flex; gap: 8px; justify-content: center; align-items: center; min-height: 46px; flex-wrap: wrap; }
+  .actionbar .desc { font-size: 13px; color: var(--muted); flex-basis: 100%; text-align: center; }
+
+  .progress { display: flex; gap: 6px; justify-content: center; margin-top: 8px; }
+  .progress span { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; border: 2px solid var(--line); color: var(--muted); }
+  .progress span.on { color: #fff; border-color: var(--cc); background: var(--cc); }
+
+  .log { font-size: 13px; color: var(--muted); max-height: 140px; overflow-y: auto; line-height: 1.6; }
+  .log div:first-child { color: var(--fg); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1><span>バ</span><span>モ</span><span>ス</span><span>か</span><span>ね</span><span>こ</span></h1>
+
+  <!-- ===== ロビー ===== -->
+  <section id="lobby">
+    <div class="panel">
+      <label for="nameInput">なまえ</label>
+      <input id="nameInput" maxlength="10" placeholder="名無し" autocomplete="off">
+    </div>
+    <div class="panel">
+      <button id="createBtn" style="width:100%">部屋を作る</button>
+      <p class="muted">作ったら、表示される部屋コード(またはリンク)を相手に送ってね。</p>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <div><label for="codeInput">部屋コード</label><input id="codeInput" maxlength="4" placeholder="ABCD" autocomplete="off" style="text-transform:uppercase"></div>
+        <button id="joinBtn" class="sub" style="flex:0 0 auto">部屋に入る</button>
+      </div>
+    </div>
+    <div class="panel rules">
+      <b>あそびかた</b>
+      <ul>
+        <li>「バ・モ・ス・か・ね・こ」の6種類を1枚ずつ手札にそろえたら勝ち。</li>
+        <li>手札は5枚。自分の番は、山札から1枚引いて、好きなカードを1枚捨てる。</li>
+        <li>5枚では6種類そろわないので、引いて手札が6枚以上になった瞬間がチャンス!</li>
+        <li>効果カードは捨てると効果が発動する。ターンの最後に手札が6枚以上なら5枚になるまで捨てる。</li>
+      </ul>
+      <div id="fxList"></div>
+    </div>
+  </section>
+
+  <!-- ===== 待合室 ===== -->
+  <section id="waiting" class="hidden">
+    <div class="panel" style="text-align:center">
+      <div class="muted">部屋コード</div>
+      <div class="code" id="roomCode"></div>
+      <button id="copyBtn" class="sub">招待リンクをコピー</button>
+      <p class="muted" id="waitMsg">相手が入るのを待っています…</p>
+    </div>
+  </section>
+
+  <!-- ===== ゲーム ===== -->
+  <section id="game" class="hidden">
+    <div class="panel">
+      <div class="zone-title"><span id="oppName">相手</span><span id="oppCount"></span></div>
+      <div class="hand" id="oppHand"></div>
+    </div>
+
+    <div class="table">
+      <div class="pile"><div id="deckView"></div><span id="deckCount"></span></div>
+      <div class="pile"><div id="discardView"></div><span>捨て札</span></div>
+    </div>
+
+    <div class="status" id="status"></div>
+    <div class="actionbar" id="actionbar"></div>
+
+    <div class="panel">
+      <div class="zone-title"><span id="myName">あなた</span><span class="muted">カードをタップして選ぶ</span></div>
+      <div class="hand" id="myHand"></div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <div class="panel">
+      <div class="zone-title"><span>ログ</span><span class="muted" id="roomLabel"></span></div>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// ===== Supabase の設定(無限階段と同じプロジェクトを使い回し) =====
+// Realtime の「Broadcast」機能だけを使うので、SQL の追加は不要。
+const SUPABASE_URL = 'https://aeovzvbsdbpdgkasuppm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vTYcq-C9xWv47s3uV2Sj-Q_KxeaYkhu';
+
+// ===== カードの定義 =====
+const LETTERS = ['バ', 'モ', 'ス', 'か', 'ね', 'こ'];
+const LETTER_COLOR = { 'バ': 'var(--c-ba)', 'モ': 'var(--c-mo)', 'ス': 'var(--c-su)', 'か': 'var(--c-ka)', 'ね': 'var(--c-ne)', 'こ': 'var(--c-ko)' };
+const LETTER_COPIES = 5;     // 各文字カードの枚数
+
+// 効果カード。n は山札に入る枚数。効果を増やしたいときはここに足して、applyEffect にも処理を書く
+const EFFECTS = {
+  draw2:   { name: 'ドロー',   icon: '🃏', n: 3, desc: '山札から2枚引く' },
+  okawari: { name: 'おかわり', icon: '🍚', n: 3, desc: '1枚引いて、もう1回カードを使える' },
+  steal:   { name: 'ぬすむ',   icon: '🫳', n: 2, desc: '相手の手札をランダムに1枚もらう' },
+  slap:    { name: 'はたく',   icon: '💥', n: 3, desc: '相手の手札をランダムに1枚捨てさせる' },
+  trade:   { name: 'とりかえ', icon: '🔁', n: 2, desc: '自分の1枚と相手のランダム1枚を交換' },
+  swapall: { name: 'いれかえ', icon: '🌀', n: 1, desc: '手札をまるごと相手と交換' },
+  reset:   { name: 'リセット', icon: '♻️', n: 2, desc: '自分の手札を全部捨てて5枚引き直す' },
+  combo:   { name: 'コンボ',   icon: '⚡', n: 4, desc: 'バモス→2枚引く / かねこ→相手を2枚捨てさせる' },
+};
+// コンボカードの条件。手札に words の文字が全部あればボーナス
+const COMBOS = [
+  { words: ['バ', 'モ', 'ス'], name: 'バモス', desc: '山札から2枚引く' },
+  { words: ['か', 'ね', 'こ'], name: 'かねこ', desc: '相手の手札をランダムに2枚捨てさせる' },
+];
+const comboHit = (hand, combo) => combo.words.every(L => hand.some(c => c.k === L));
+const HAND_SIZE = 5;
+
+const isLetter = k => LETTERS.includes(k);
+const cardLabel = c => isLetter(c.k) ? `「${c.k}」` : `【${EFFECTS[c.k].name}】`;
+
+function buildDeck() {
+  const deck = [];
+  let id = 0;
+  for (const L of LETTERS) for (let i = 0; i < LETTER_COPIES; i++) deck.push({ id: id++, k: L });
+  for (const [k, e] of Object.entries(EFFECTS)) for (let i = 0; i < e.n; i++) deck.push({ id: id++, k });
+  return shuffle(deck);
+}
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const hasAll = hand => LETTERS.every(L => hand.some(c => c.k === L));
+
+// ===== ゲームのルール(部屋を作った人=ホストの画面だけで実行される) =====
+// S がゲームの全状態。ホストが更新して、相手に丸ごと送る。
+let S = null;
+
+function newGame(players, first) {
+  S = {
+    v: 0, players, first,
+    deck: buildDeck(), discard: [], hands: [[], []],
+    turn: first, phase: 'play', winner: null, log: [], newIds: [],
+  };
+  for (let i = 0; i < HAND_SIZE; i++) for (const p of [0, 1]) S.hands[p].push(drawCard());
+  addLog(`ゲーム開始!先攻は ${S.players[first].name}`);
+  beginTurn();
+}
+
+function addLog(msg) { S.log.unshift(msg); S.log.length = Math.min(S.log.length, 40); }
+const pname = p => S.players[p].name;
+
+function drawCard() {
+  if (S.deck.length === 0) {
+    if (S.discard.length === 0) return null;
+    S.deck = shuffle(S.discard);
+    S.discard = [];
+    addLog('山札がなくなったので、捨て札を混ぜて山札にした');
+  }
+  return S.deck.pop();
+}
+function drawTo(p, n) {
+  const got = [];
+  for (let i = 0; i < n; i++) { const c = drawCard(); if (c) { S.hands[p].push(c); got.push(c); } }
+  return got;
+}
+const randomTake = hand => hand.splice(Math.floor(Math.random() * hand.length), 1)[0];
+
+function beginTurn() {
+  S.phase = 'play';
+  S.newIds = drawTo(S.turn, 1).map(c => c.id);
+  checkWin();
+}
+
+// 6種類そろえるには手札が6枚以上いる。自分の番の途中で、手札に6種類そろった瞬間に勝ち
+function checkWin() {
+  if (S.phase !== 'over' && hasAll(S.hands[S.turn])) {
+    S.winner = S.turn; S.phase = 'over';
+    addLog(`🎉 ${pname(S.turn)} が ${LETTERS.join('')} をそろえた!`);
+  }
+}
+
+function afterAction() {
+  if (S.hands[S.turn].length > HAND_SIZE) S.phase = 'trim';
+  else endTurn();
+}
+
+function endTurn() {
+  S.turn = 1 - S.turn;
+  beginTurn();
+}
+
+function applyEffect(p, k) {
+  const opp = 1 - p, mine = S.hands[p], theirs = S.hands[opp];
+  switch (k) {
+    case 'draw2': {
+      const got = drawTo(p, 2);
+      S.newIds = got.map(c => c.id);
+      addLog(`${pname(p)} が【ドロー】で${got.length}枚引いた`);
+      break;
+    }
+    case 'okawari': {
+      const got = drawTo(p, 1);
+      S.newIds = got.map(c => c.id);
+      S.phase = 'play';
+      addLog(`${pname(p)} が【おかわり】で1枚引いて、もう1回カードを使う`);
+      return true;   // もう1枚使うまでターンは終わらない
+    }
+    case 'combo': {
+      // 条件は使う前の手札で判定(両方そろっていれば両方発動)
+      const [bamosu, kaneko] = COMBOS.map(cb => comboHit(mine, cb));
+      if (!bamosu && !kaneko) { addLog(`${pname(p)} の【コンボ】は不発だった…`); break; }
+      if (bamosu) {
+        const got = drawTo(p, 2);
+        S.newIds = got.map(c => c.id);
+        addLog(`${pname(p)} の【コンボ】バモス!${got.length}枚引いた`);
+      }
+      if (kaneko) {
+        const lost = [];
+        for (let i = 0; i < 2 && theirs.length; i++) { const c = randomTake(theirs); S.discard.push(c); lost.push(cardLabel(c)); }
+        drawTo(opp, lost.length);
+        addLog(`${pname(p)} の【コンボ】かねこ!${pname(opp)} の${lost.join('')}が捨てられた`);
+      }
+      break;
+    }
+    case 'steal': {
+      if (!theirs.length) { addLog('相手の手札がなかった'); break; }
+      const c = randomTake(theirs);
+      mine.push(c); S.newIds = [c.id];
+      drawTo(opp, 1);
+      addLog(`${pname(p)} が【ぬすむ】で ${pname(opp)} から1枚うばった`);
+      break;
+    }
+    case 'slap': {
+      if (!theirs.length) { addLog('相手の手札がなかった'); break; }
+      const c = randomTake(theirs);
+      S.discard.push(c);
+      drawTo(opp, 1);
+      addLog(`${pname(p)} の【はたく】で ${pname(opp)} の${cardLabel(c)}が捨てられた`);
+      break;
+    }
+    case 'trade': {
+      if (!mine.length || !theirs.length) { addLog('交換できるカードがなかった'); break; }
+      S.phase = 'trade';
+      addLog(`${pname(p)} が【とりかえ】を使った`);
+      return true;   // 渡すカードを選ぶまで待つ
+    }
+    case 'swapall': {
+      [S.hands[p], S.hands[opp]] = [S.hands[opp], S.hands[p]];
+      S.newIds = S.hands[p].map(c => c.id);
+      addLog(`${pname(p)} の【いれかえ】で手札がまるごと入れかわった!`);
+      break;
+    }
+    case 'reset': {
+      S.discard.push(...mine);
+      S.hands[p] = [];
+      const got = drawTo(p, HAND_SIZE);
+      S.newIds = got.map(c => c.id);
+      addLog(`${pname(p)} が【リセット】で手札を引き直した`);
+      break;
+    }
+  }
+  return false;
+}
+
+// プレイヤー p の操作 a を処理する。正しく処理できたら true
+function applyAction(p, a) {
+  if (a.type === 'rematch') {
+    if (S.phase !== 'over') return false;
+    newGame(S.players, 1 - S.first);
+    return true;
+  }
+  if (S.phase === 'over' || p !== S.turn) return false;
+  const hand = S.hands[p];
+  const idx = hand.findIndex(c => c.id === a.cardId);
+  if (idx < 0) return false;
+
+  if (S.phase === 'play' && a.type === 'play') {
+    const card = hand.splice(idx, 1)[0];
+    S.discard.push(card);
+    S.newIds = [];
+    if (isLetter(card.k)) {
+      addLog(`${pname(p)} が${cardLabel(card)}を捨てた`);
+      afterAction();
+    } else {
+      const waiting = applyEffect(p, card.k);
+      checkWin();
+      if (!waiting && S.phase !== 'over') afterAction();
+    }
+    return true;
+  }
+  if (S.phase === 'trade' && a.type === 'trade') {
+    const give = hand.splice(idx, 1)[0];
+    const theirs = S.hands[1 - p];
+    const got = randomTake(theirs);
+    theirs.push(give); hand.push(got);
+    S.newIds = [got.id];
+    addLog(`${pname(p)} が ${pname(1 - p)} とカードを1枚交換した`);
+    afterAction();
+    return true;
+  }
+  if (S.phase === 'trim' && a.type === 'trim') {
+    const card = hand.splice(idx, 1)[0];
+    S.discard.push(card);
+    addLog(`${pname(p)} が${cardLabel(card)}を捨てた`);
+    if (hand.length <= HAND_SIZE) endTurn();
+    return true;
+  }
+  return false;
+}
+
+// ===== 通信(Supabase Realtime Broadcast) =====
+// ホストが状態を持ち、ゲストは操作を送るだけ。ホストが結果を全員に送り返す。
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+let channel = null, roomCode = null, isHost = false, joinTimer = null;
+
+function store(kind, key, val) {
+  try { const s = kind === 'l' ? localStorage : sessionStorage; if (val === undefined) return s.getItem(key); s.setItem(key, val); } catch { return null; }
+}
+const myId = store('s', 'bamosId') || (() => { const id = Math.random().toString(36).slice(2, 10); store('s', 'bamosId', id); return id; })();
+const myName = () => ($('nameInput').value.trim() || '名無し').slice(0, 10);
+
+function connect(code, host) {
+  if (!sb) { alert('通信ライブラリを読み込めませんでした。ネット接続を確認してね'); return; }
+  roomCode = code; isHost = host;
+  store('l', 'bamosName', myName());
+  try { history.replaceState(null, '', location.pathname + '?room=' + code); } catch {}
+  channel = sb.channel('bamos-' + code, { config: { broadcast: { self: false } } });
+  channel.on('broadcast', { event: 'msg' }, ({ payload }) => onMsg(payload));
+  channel.subscribe(status => {
+    if (status !== 'SUBSCRIBED') return;
+    if (isHost) {
+      if (S) send({ t: 'state', s: S }); else showWaiting();
+    } else {
+      $('waitMsg').textContent = '部屋に接続中…';
+      showWaiting();
+      const hello = () => send({ t: 'join', id: myId, name: myName() });
+      hello();
+      joinTimer = setInterval(hello, 2000);   // ホストから返事が来るまで送り続ける
+    }
+  });
+}
+function send(payload) { channel && channel.send({ type: 'broadcast', event: 'msg', payload }); }
+
+function onMsg(m) {
+  if (isHost) {
+    if (m.t === 'join') {
+      if (!S) {
+        newGame([{ id: myId, name: myName() }, { id: m.id, name: m.name }], Math.random() < 0.5 ? 0 : 1);
+        publish();
+      } else if (S.players[1].id === m.id) {
+        send({ t: 'state', s: S });             // 再接続
+      } else {
+        send({ t: 'full', id: m.id });
+      }
+    } else if (m.t === 'act' && S) {
+      const p = S.players.findIndex(pl => pl.id === m.id);
+      if (p >= 0 && applyAction(p, m.a)) publish();
+    }
+  } else {
+    if (m.t === 'state') {
+      clearInterval(joinTimer);
+      if (!S || m.s.v >= S.v) { S = m.s; render(); }
+    } else if (m.t === 'full' && m.id === myId) {
+      clearInterval(joinTimer);
+      alert('この部屋はもう満員です');
+      location.href = location.pathname;
+    }
+  }
+}
+
+// 状態を更新したら相手に送り、自分の画面も描き直す
+function publish() {
+  S.v++;
+  store('s', 'bamosHost-' + roomCode, JSON.stringify(S));   // ホストがページを再読み込みしても続きから遊べるように
+  send({ t: 'state', s: S });
+  render();
+}
+
+function act(a) {
+  selectedId = null;
+  if (isHost) { if (applyAction(meIdx(), a)) publish(); }
+  else send({ t: 'act', id: myId, a });
+}
+
+// ===== 画面 =====
+const $ = id => document.getElementById(id);
+let selectedId = null;
+const meIdx = () => S ? S.players.findIndex(p => p.id === myId) : -1;
+
+function cardEl(c, opts = {}) {
+  const el = document.createElement('div');
+  el.className = 'card' + (opts.small ? ' small' : '');
+  if (!c) { el.classList.add('back'); return el; }
+  if (isLetter(c.k)) {
+    el.style.setProperty('--cc', LETTER_COLOR[c.k]);
+    el.innerHTML = `<div class="big">${c.k}</div>`;
+  } else {
+    const e = EFFECTS[c.k];
+    el.classList.add('fx');
+    el.innerHTML = `<div class="fxicon">${e.icon}</div><div class="fxname">${e.name}</div><div class="fxdesc">${e.desc}</div>`;
+  }
+  return el;
+}
+
+function showWaiting() {
+  $('lobby').classList.add('hidden'); $('game').classList.add('hidden'); $('waiting').classList.remove('hidden');
+  $('roomCode').textContent = roomCode;
+}
+
+function render() {
+  if (!S) return;
+  $('lobby').classList.add('hidden'); $('waiting').classList.add('hidden'); $('game').classList.remove('hidden');
+  const me = meIdx(), opp = 1 - me;
+  if (me < 0) return;
+  const myTurn = S.turn === me && S.phase !== 'over';
+  const myHand = S.hands[me];
+  if (!myHand.some(c => c.id === selectedId)) selectedId = null;
+
+  $('oppName').textContent = S.players[opp].name;
+  $('myName').textContent = S.players[me].name + '(あなた)';
+  $('oppCount').textContent = `手札 ${S.hands[opp].length}枚`;
+  $('roomLabel').textContent = '部屋 ' + roomCode;
+
+  // 相手の手札(ゲーム終了時は公開)
+  const oh = $('oppHand'); oh.innerHTML = '';
+  S.hands[opp].forEach(c => oh.appendChild(cardEl(S.phase === 'over' ? c : null)));
+
+  // 山札と捨て札
+  $('deckView').innerHTML = ''; $('deckView').appendChild(S.deck.length ? cardEl(null) : Object.assign(document.createElement('div'), { className: 'empty' }));
+  $('deckCount').textContent = `山札 ${S.deck.length}`;
+  const top = S.discard[S.discard.length - 1];
+  $('discardView').innerHTML = ''; $('discardView').appendChild(top ? cardEl(top) : Object.assign(document.createElement('div'), { className: 'empty' }));
+
+  // 自分の手札
+  const mh = $('myHand'); mh.innerHTML = '';
+  myHand.forEach(c => {
+    const el = cardEl(c);
+    if (myTurn) {
+      el.classList.add('clickable');
+      el.onclick = () => { selectedId = selectedId === c.id ? null : c.id; render(); };
+    }
+    if (c.id === selectedId) el.classList.add('selected');
+    if (S.turn === me && S.newIds.includes(c.id)) el.classList.add('new');
+    mh.appendChild(el);
+  });
+
+  // そろい具合
+  const pg = $('progress'); pg.innerHTML = '';
+  LETTERS.forEach(L => {
+    const s = document.createElement('span');
+    s.textContent = L; s.style.setProperty('--cc', LETTER_COLOR[L]);
+    if (myHand.some(c => c.k === L)) s.classList.add('on');
+    pg.appendChild(s);
+  });
+
+  // 状況の表示と操作ボタン
+  const st = $('status'), bar = $('actionbar');
+  st.className = 'status'; bar.innerHTML = '';
+  const sel = myHand.find(c => c.id === selectedId);
+  const button = (label, onclick, cls) => { const b = document.createElement('button'); b.textContent = label; b.onclick = onclick; if (cls) b.className = cls; bar.appendChild(b); return b; };
+
+  if (S.phase === 'over') {
+    st.classList.add('win');
+    st.textContent = S.winner === me ? '🎉 あなたの勝ち!' : `${S.players[S.winner].name} の勝ち…`;
+    if (isHost) button('もう一回', () => act({ type: 'rematch' }));
+    else bar.innerHTML = '<span class="desc">部屋を作った人が「もう一回」を押すと再戦できます</span>';
+  } else if (!myTurn) {
+    st.textContent = `${S.players[opp].name} の番です…`;
+  } else {
+    st.classList.add('mine');
+    const need = myHand.length - HAND_SIZE;
+    const msg = {
+      play: 'あなたの番:カードを1枚選んで、捨てる or 使う',
+      trim: `手札が多い!あと${need}枚 捨ててください`,
+      trade: '【とりかえ】相手に渡すカードを1枚選んでください',
+    }[S.phase];
+    st.textContent = msg;
+    if (sel) {
+      if (S.phase === 'play') {
+        if (isLetter(sel.k)) button(`${cardLabel(sel)}を捨てる`, () => act({ type: 'play', cardId: sel.id }));
+        else {
+          button(`【${EFFECTS[sel.k].name}】を使う`, () => act({ type: 'play', cardId: sel.id }));
+          const d = document.createElement('span'); d.className = 'desc'; d.textContent = EFFECTS[sel.k].desc; bar.appendChild(d);
+          if (sel.k === 'combo') {
+            const rest = myHand.filter(c => c.id !== sel.id);
+            d.textContent = COMBOS.map(cb => `${comboHit(rest, cb) ? '✅' : '❌'} ${cb.name}:${cb.desc}`).join(' / ');
+          }
+        }
+      } else if (S.phase === 'trim') {
+        button(`${cardLabel(sel)}を捨てる`, () => act({ type: 'trim', cardId: sel.id }));
+        if (!isLetter(sel.k)) { const d = document.createElement('span'); d.className = 'desc'; d.textContent = '※ この捨て方では効果は発動しません'; bar.appendChild(d); }
+      } else if (S.phase === 'trade') {
+        button(`${cardLabel(sel)}を渡す`, () => act({ type: 'trade', cardId: sel.id }));
+      }
+    }
+  }
+
+  // ログ
+  $('log').innerHTML = S.log.map(l => `<div>${escapeHtml(l)}</div>`).join('');
+}
+const escapeHtml = s => s.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+// ===== ロビーの操作 =====
+function makeCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+$('nameInput').value = store('l', 'bamosName') || '';
+$('createBtn').onclick = () => connect(makeCode(), true);
+$('joinBtn').onclick = () => {
+  const code = $('codeInput').value.trim().toUpperCase();
+  if (code.length !== 4) { alert('4文字の部屋コードを入れてね'); return; }
+  connect(code, false);
+};
+$('copyBtn').onclick = async () => {
+  const url = location.origin + location.pathname + '?room=' + roomCode;
+  try { await navigator.clipboard.writeText(url); $('copyBtn').textContent = 'コピーしました!'; }
+  catch { prompt('このリンクを相手に送ってね', url); }
+};
+$('fxList').innerHTML = '<b>効果カード</b><ul>' +
+  Object.values(EFFECTS).map(e => `<li>${e.icon} <b>${e.name}</b>(${e.n}枚):${e.desc}</li>`).join('') + '</ul>' +
+  `<span class="muted">文字カードは各${LETTER_COPIES}枚。</span>`;
+
+// 招待リンク(?room=XXXX)で開いたとき
+const urlRoom = new URLSearchParams(location.search).get('room');
+if (urlRoom) {
+  const code = urlRoom.toUpperCase();
+  const saved = store('s', 'bamosHost-' + code);
+  if (saved) { S = JSON.parse(saved); connect(code, true); render(); }   // ホストの再読み込み
+  else $('codeInput').value = code;
+}
+</script>
+</body>
+</html>
