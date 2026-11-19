@@ -96,6 +96,47 @@
   @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   .opp-note { font-size: 12px; color: #9fd4ff; margin-left: 6px; }
 
+  /* ===== ゲーム中はスクロールしなくていいように小さめにする ===== */
+  body.ingame h1 { display: none; }
+  body.ingame main { padding: 8px 12px; }
+  #game .panel { padding: 8px 10px; margin-bottom: 6px; }
+  #game .zone-title { margin-bottom: 4px; font-size: 12px; align-items: center; }
+  #game .hand { gap: 5px; min-height: 0; }
+  #game .card { width: 60px; height: 86px; border-width: 2px; border-radius: 8px; padding: 3px; }
+  #game .card .big { font-size: 32px; }
+  #game .card .fxicon { font-size: 20px; }
+  #game .card .fxname { font-size: 12px; }
+  #game .card .fxdesc { font-size: 8px; margin-top: 2px; }
+  #game .hand.many .card { width: 48px; height: 68px; }
+  #game .hand.many .card .big { font-size: 26px; }
+  #game .hand.many .card .fxdesc { display: none; }
+  #game .card.small, #game .hand.opp .card { width: 34px; height: 48px; }
+  #game .card.small .big, #game .hand.opp .card .big { font-size: 18px; }
+  #game .card.small .fxicon, #game .hand.opp .card .fxicon { font-size: 13px; }
+  #game .card.small .fxname, #game .hand.opp .card .fxname { font-size: 7px; }
+  #game .card.small .fxdesc, #game .hand.opp .card .fxdesc { display: none; }
+  #game .card.selected { transform: translateY(-6px); }
+  #game .mid { display: flex; gap: 10px; align-items: center; }
+  #game .table { margin: 0; gap: 8px; flex: 0 0 auto; }
+  #game .pile { font-size: 11px; }
+  #game .pile .card, #game .empty { width: 46px; height: 66px; margin-bottom: 2px; }
+  #game .pile .card .big { font-size: 24px; }
+  #game .pile .card .fxicon { font-size: 16px; }
+  #game .pile .card .fxname { font-size: 9px; }
+  #game .pile .card .fxdesc { display: none; }
+  #game .last { flex: 1; min-width: 0; margin: 0; padding: 6px 10px; gap: 8px; }
+  #game .last .what { font-size: 13px; line-height: 1.4; max-height: 66px; overflow-y: auto; }
+  #game .last .what div { font-size: 12px; }
+  #game .status { font-size: 15px; padding: 7px; margin: 6px 0; }
+  #game .status.win { font-size: 18px; }
+  #game .actionbar { min-height: 0; gap: 6px; margin-bottom: 6px; }
+  #game .actionbar button { padding: 7px 12px; font-size: 14px; }
+  #game .actionbar .desc { font-size: 12px; }
+  #game .progress { margin: 0; gap: 3px; }
+  #game .progress span { width: 22px; height: 22px; font-size: 12px; border-width: 1.5px; }
+  #game .progress span.joker { font-size: 11px; padding: 0 6px; }
+  #game .log { max-height: 58px; font-size: 12px; line-height: 1.5; }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -126,6 +167,7 @@
         <li>最初の手札は5枚。自分の番は、山札から1枚引いて、好きなカードを1枚捨てる(使う)。</li>
         <li>手札は何枚でも持てる。ドローなどで手札を増やせばそろえやすくなる!</li>
         <li>効果カードは捨てると効果が発動する。</li>
+        <li>捨てたくないときは「捨てずにターン終了」もできる。</li>
       </ul>
       <div id="fxList"></div>
     </div>
@@ -145,22 +187,23 @@
   <section id="game" class="hidden">
     <div class="panel">
       <div class="zone-title"><span id="oppName">相手</span><span id="oppCount"></span></div>
-      <div class="hand" id="oppHand"></div>
+      <div class="hand opp" id="oppHand"></div>
     </div>
 
-    <div class="table">
-      <div class="pile"><div id="deckView"></div><span id="deckCount"></span></div>
-      <div class="pile"><div id="discardView"></div><span>捨て札</span></div>
+    <div class="mid">
+      <div class="table">
+        <div class="pile"><div id="deckView"></div><span id="deckCount"></span></div>
+        <div class="pile"><div id="discardView"></div><span>捨て札</span></div>
+      </div>
+      <div class="last hidden" id="lastPlay"></div>
     </div>
 
-    <div class="last hidden" id="lastPlay"></div>
     <div class="status" id="status"></div>
     <div class="actionbar" id="actionbar"></div>
 
     <div class="panel">
-      <div class="zone-title"><span id="myName">あなた</span><span class="muted">カードをタップして選ぶ</span></div>
+      <div class="zone-title"><span id="myName">あなた</span><div class="progress" id="progress"></div></div>
       <div class="hand" id="myHand"></div>
-      <div class="progress" id="progress"></div>
     </div>
 
     <div class="panel">
@@ -187,8 +230,11 @@ const LETTER_COPIES = 4;     // 各文字カードの枚数
 
 // 効果カード。n は山札に入る枚数。効果を増やしたいときはここに足して、applyEffect にも処理を書く
 const EFFECTS = {
-  draw2:   { name: 'ドロー',   icon: '🃏', n: 3, desc: '山札から2枚引く' },
-  okawari: { name: 'おかわり', icon: '🍚', n: 3, desc: '1枚引いて、もう1回カードを使える' },
+  draw2:   { name: 'ドロー',   icon: '🃏', n: 5, desc: '山札から2枚引く' },
+  draw3:   { name: 'だいドロー', icon: '🎁', n: 3, desc: '山札から3枚引く' },
+  okawari: { name: 'おかわり', icon: '🍚', n: 4, desc: '1枚引いて、もう1回カードを使える' },
+  share:   { name: 'おすそわけ', icon: '🍰', n: 2, desc: '自分は2枚、相手は1枚引く' },
+  dig:     { name: 'さがしもの', icon: '🔍', n: 3, desc: '自分が持っていない文字が出るまで山札をめくってもらう' },
   steal:   { name: 'ぬすむ',   icon: '🫳', n: 2, desc: '相手の手札をランダムに1枚もらう' },
   slap:    { name: 'はたく',   icon: '💥', n: 3, desc: '相手の手札をランダムに1枚捨てさせる' },
   trade:   { name: 'とりかえ', icon: '🔁', n: 2, desc: '自分の1枚と相手のランダム1枚を交換' },
@@ -328,6 +374,39 @@ function applyEffect(p, k) {
       const got = drawTo(p, 2);
       S.newIds = got.map(c => c.id);
       addLog(`${pname(p)} が【ドロー】で${got.length}枚引いた`);
+      break;
+    }
+    case 'draw3': {
+      const got = drawTo(p, 3);
+      S.newIds = got.map(c => c.id);
+      addLog(`🎁 ${pname(p)} が【だいドロー】で${got.length}枚引いた`);
+      break;
+    }
+    case 'share': {
+      const got = drawTo(p, 2);
+      S.newIds = got.map(c => c.id);
+      drawTo(opp, 1);
+      addLog(`🍰 ${pname(p)} の【おすそわけ】:${pname(p)} は${got.length}枚、${pname(opp)} は1枚引いた`);
+      break;
+    }
+    case 'dig': {
+      // 持っていない文字が出るまでめくる。めくったハズレは捨て札へ(最大10枚)
+      const lack = missingLetters(mine);
+      const flipped = [];
+      let found = null;
+      for (let i = 0; i < 10 && lack.length; i++) {
+        const c = drawCard();
+        if (!c) break;
+        if (lack.includes(c.k)) { found = c; break; }
+        flipped.push(c);
+      }
+      S.discard.push(...flipped);
+      if (found) {
+        mine.push(found); S.newIds = [found.id];
+        addLog(`🔍 ${pname(p)} の【さがしもの】:${flipped.length + 1}枚めくって${cardLabel(found)}を見つけた!`);
+      } else {
+        addLog(`🔍 ${pname(p)} の【さがしもの】は見つからなかった…`);
+      }
       break;
     }
     case 'okawari': {
@@ -478,6 +557,16 @@ function applyAction(p, a) {
     return true;
   }
   if (S.phase === 'over' || p !== S.turn) return false;
+  // カードを捨てずにターンを終える
+  if (a.type === 'pass') {
+    if (S.phase !== 'play') return false;
+    recordPlay(p, 'pass', () => {
+      S.again = false;
+      addLog(`${pname(p)} はカードを捨てずにターンを終えた`);
+      endTurn();
+    });
+    return true;
+  }
   const hand = S.hands[p];
   const idx = hand.findIndex(c => c.id === a.cardId);
   if (idx < 0) return false;
@@ -524,7 +613,7 @@ function recordPlay(p, k, fn) {
 // ホストが状態を持ち、ゲストは操作を送るだけ。ホストが結果を全員に送り返す。
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 let channel = null, roomCode = null, isHost = false, joinTimer = null;
-const GAME_VERSION = 4;   // ルールを変えたら数字を上げる。古いページの人とは遊べないようにする
+const GAME_VERSION = 5;   // ルールを変えたら数字を上げる。古いページの人とは遊べないようにする
 let pendingAct = null;    // ゲストが送ったけど、まだ結果が返ってきていない操作
 
 function store(kind, key, val) {
@@ -654,6 +743,7 @@ function showWaiting() {
 function render() {
   if (!S) return;
   $('lobby').classList.add('hidden'); $('waiting').classList.add('hidden'); $('game').classList.remove('hidden');
+  document.body.classList.add('ingame');
   const me = meIdx(), opp = 1 - me;
   if (me < 0) return;
   const myTurn = S.turn === me && S.phase !== 'over';
@@ -683,6 +773,7 @@ function render() {
 
   // 自分の手札
   const mh = $('myHand'); mh.innerHTML = '';
+  mh.classList.toggle('many', myHand.length > (window.innerWidth < 500 ? 5 : 10));   // 手札が多いときはカードを小さく
   myHand.forEach(c => {
     const el = cardEl(c);
     if (myTurn) {
@@ -731,6 +822,9 @@ function render() {
       trade: '【とりかえ】相手に渡すカードを1枚選んでください',
     }[S.phase];
     st.textContent = msg;
+    if (!sel && S.phase === 'play') {
+      const d = document.createElement('span'); d.className = 'desc'; d.textContent = 'カードをタップして選ぶか、捨てずにターンを終えることもできます'; bar.appendChild(d);
+    }
     if (sel) {
       if (S.phase === 'play') {
         if (isLetter(sel.k) || sel.k === 'joker') button(`${cardLabel(sel)}を捨てる`, () => act({ type: 'play', cardId: sel.id }));
@@ -746,6 +840,7 @@ function render() {
         button(`${cardLabel(sel)}を渡す`, () => act({ type: 'trade', cardId: sel.id }));
       }
     }
+    if (S.phase === 'play') button('捨てずにターン終了', () => act({ type: 'pass' }), 'sub');
   }
 
   // ログ
@@ -757,6 +852,12 @@ function renderLastPlay(me) {
   const lp = S.lastPlay, box = $('lastPlay');
   if (!lp) { box.classList.add('hidden'); shownPlayId = null; return; }
   const who = lp.p === me ? 'あなた' : S.players[lp.p].name;
+  if (lp.k === 'pass') {
+    box.className = 'last ' + (lp.p === me ? 'me' : 'opp');
+    box.innerHTML = `<div class="what"><b>${escapeHtml(who)}</b> はカードを捨てずにターンを終えた</div>`;
+    shownPlayId = lp.id;
+    return;
+  }
   const verb = isLetter(lp.k) || lp.k === 'joker' ? 'を捨てた' : 'を使った!';
   const label = isLetter(lp.k) ? `「${lp.k}」` : `【${EFFECTS[lp.k].name}】`;
   const msgs = lp.msgs.map(m => `<div>・${escapeHtml(m)}</div>`).join('');
