@@ -240,7 +240,8 @@ let S = null;
 
 function newGame(players, first) {
   S = {
-    v: 0, players, first,
+    v: S ? S.v : 0,   // 再戦でも番号を戻さない(戻すとゲストが新しい状態を無視してしまう)
+    players, first, again: false,
     deck: buildDeck(), discard: [], hands: [[], []],
     turn: first, phase: 'play', winner: null, log: [], newIds: [],
     skip: [false, false],   // ふぶき:次のターンが休みか
@@ -278,6 +279,7 @@ const randomTake = hand => hand.splice(Math.floor(Math.random() * hand.length), 
 
 function beginTurn() {
   S.phase = 'play';
+  S.again = false;
   S.newIds = drawTo(S.turn, 1).map(c => c.id);
   checkWin();
   // 手札が0枚で山札も空なら、何もできないのでパス
@@ -332,6 +334,7 @@ function applyEffect(p, k) {
       const got = drawTo(p, 1);
       S.newIds = got.map(c => c.id);
       S.phase = 'play';
+      S.again = true;
       addLog(`${pname(p)} が【おかわり】で1枚引いて、もう1回カードを使う`);
       return true;   // もう1枚使うまでターンは終わらない
     }
@@ -482,6 +485,7 @@ function applyAction(p, a) {
   if (S.phase === 'play' && a.type === 'play') {
     const card = hand.splice(idx, 1)[0];
     recordPlay(p, card.k, () => {
+      S.again = false;
       S.discard.push(card);
       S.newIds = [];
       if (isLetter(card.k)) {
@@ -520,6 +524,8 @@ function recordPlay(p, k, fn) {
 // ホストが状態を持ち、ゲストは操作を送るだけ。ホストが結果を全員に送り返す。
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 let channel = null, roomCode = null, isHost = false, joinTimer = null;
+const GAME_VERSION = 4;   // ルールを変えたら数字を上げる。古いページの人とは遊べないようにする
+let pendingAct = null;    // ゲストが送ったけど、まだ結果が返ってきていない操作
 
 function store(kind, key, val) {
   try { const s = kind === 'l' ? localStorage : sessionStorage; if (val === undefined) return s.getItem(key); s.setItem(key, val); } catch { return null; }
@@ -537,13 +543,18 @@ function connect(code, host) {
   channel.subscribe(status => {
     if (status !== 'SUBSCRIBED') return;
     if (isHost) {
-      if (S) send({ t: 'state', s: S }); else showWaiting();
+      if (S) send({ t: 'state', s: S, ver: GAME_VERSION }); else showWaiting();
     } else {
       $('waitMsg').textContent = '部屋に接続中…';
       showWaiting();
-      const hello = () => send({ t: 'join', id: myId, name: myName() });
+      // 2.5秒ごとに「今の状態の番号」をホストに知らせる。通信が途切れて取りこぼしても、ここで追いつける
+      const hello = () => {
+        send({ t: 'join', id: myId, name: myName(), ver: GAME_VERSION, v: S ? S.v : -1 });
+        if (pendingAct && S && S.v === pendingAct.v) send({ t: 'act', id: myId, a: pendingAct.a, aid: pendingAct.aid });   // 操作が届いていなければ送り直す
+      };
       hello();
-      joinTimer = setInterval(hello, 2000);   // ホストから返事が来るまで送り続ける
+      clearInterval(joinTimer);
+      joinTimer = setInterval(hello, 2500);
     }
   });
 }
@@ -552,22 +563,35 @@ function send(payload) { channel && channel.send({ type: 'broadcast', event: 'ms
 function onMsg(m) {
   if (isHost) {
     if (m.t === 'join') {
+      if (m.ver !== GAME_VERSION) {
+        send({ t: 'old', id: m.id });
+        $('waitMsg').textContent = '相手のページが古いバージョンです。相手に再読み込み(Ctrl+F5)してもらってね';
+        return;
+      }
       if (!S) {
         newGame([{ id: myId, name: myName() }, { id: m.id, name: m.name }], Math.random() < 0.5 ? 0 : 1);
         publish();
       } else if (S.players[1].id === m.id) {
-        send({ t: 'state', s: S });             // 再接続
+        if (m.v !== S.v) send({ t: 'state', s: S, ver: GAME_VERSION });   // 相手の画面が古ければ送り直す
       } else {
         send({ t: 'full', id: m.id });
       }
     } else if (m.t === 'act' && S) {
       const p = S.players.findIndex(pl => pl.id === m.id);
-      if (p >= 0 && applyAction(p, m.a)) publish();
+      if (p < 0) return;
+      if (applyAction(p, m.a)) publish(m.aid);
+      else send({ t: 'state', s: S, ver: GAME_VERSION, ack: m.aid });   // 処理済みの操作が届いたときなども、最新の状態を返す
     }
   } else {
     if (m.t === 'state') {
-      clearInterval(joinTimer);
-      if (!S || m.s.v >= S.v) { S = m.s; render(); }
+      if (m.ver !== GAME_VERSION) { showOldVersion(); return; }
+      if (!S || m.s.v >= S.v) {
+        S = m.s;
+        if (pendingAct && (S.v > pendingAct.v || m.ack === pendingAct.aid)) pendingAct = null;
+        render();
+      }
+    } else if (m.t === 'old' && m.id === myId) {
+      showOldVersion();
     } else if (m.t === 'full' && m.id === myId) {
       clearInterval(joinTimer);
       alert('この部屋はもう満員です');
@@ -577,17 +601,29 @@ function onMsg(m) {
 }
 
 // 状態を更新したら相手に送り、自分の画面も描き直す
-function publish() {
+function publish(ack) {
   S.v++;
   store('s', 'bamosHost-' + roomCode, JSON.stringify(S));   // ホストがページを再読み込みしても続きから遊べるように
-  send({ t: 'state', s: S });
+  send({ t: 'state', s: S, ver: GAME_VERSION, ack });
   render();
 }
 
 function act(a) {
   selectedId = null;
   if (isHost) { if (applyAction(meIdx(), a)) publish(); }
-  else send({ t: 'act', id: myId, a });
+  else {
+    pendingAct = { a, v: S ? S.v : -1, aid: Math.random().toString(36).slice(2) };
+    send({ t: 'act', id: myId, a, aid: pendingAct.aid });
+    render();
+  }
+}
+
+let oldShown = false;
+function showOldVersion() {
+  if (oldShown) return;
+  oldShown = true;
+  clearInterval(joinTimer);
+  alert('ゲームが新しくなっています。ページを再読み込み(Ctrl+F5)してから、もう一度部屋に入ってね');
 }
 
 // ===== 画面 =====
@@ -685,11 +721,13 @@ function render() {
     if (isHost) button('もう一回', () => act({ type: 'rematch' }));
     else bar.innerHTML = '<span class="desc">部屋を作った人が「もう一回」を押すと再戦できます</span>';
   } else if (!myTurn) {
-    st.textContent = `${S.players[opp].name} の番です…`;
+    st.textContent = S.again ? `🍚 ${S.players[opp].name} がおかわり中…もう1枚使うのを待っています` : `${S.players[opp].name} の番です…`;
+  } else if (pendingAct) {
+    st.textContent = '送信中…';
   } else {
     st.classList.add('mine');
     const msg = {
-      play: 'あなたの番:カードを1枚選んで、捨てる or 使う',
+      play: S.again ? '🍚 おかわり!もう1枚カードを選んで使ってね' : 'あなたの番:カードを1枚選んで、捨てる or 使う',
       trade: '【とりかえ】相手に渡すカードを1枚選んでください',
     }[S.phase];
     st.textContent = msg;
