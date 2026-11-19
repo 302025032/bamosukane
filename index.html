@@ -72,6 +72,30 @@
 
   .log { font-size: 13px; color: var(--muted); max-height: 140px; overflow-y: auto; line-height: 1.6; }
   .log div:first-child { color: var(--fg); }
+  .progress span.joker { width: auto; padding: 0 8px; border-radius: 15px; border-color: #c9a227; color: #ffd25a; font-size: 13px; }
+
+  /* 直前に使われたカード */
+  .last { display: flex; gap: 12px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-left: 5px solid var(--who); border-radius: 10px; padding: 8px 12px; margin: 8px 0; }
+  .last.opp { --who: #ff5d6c; } .last.me { --who: var(--accent); }
+  .last .what { font-size: 14px; line-height: 1.5; }
+  .last .what b { color: var(--who); }
+  .last .what div { color: var(--muted); font-size: 13px; }
+
+  /* ポップアップ */
+  #popup { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,0.55); z-index: 10; padding: 16px; cursor: pointer; }
+  .popbox { background: var(--panel); border: 2px solid #ff5d6c; border-radius: 16px; padding: 18px 20px; text-align: center; width: 100%; max-width: 360px; animation: pop 0.25s ease-out; }
+  .popbox h2 { margin: 0 0 10px; font-size: 18px; }
+  .popbox h2 b { color: #ff5d6c; }
+  .popbox .card { margin: 0 auto 12px; width: 120px; height: 170px; }
+  .popbox .card .big { font-size: 64px; }
+  .popbox .card .fxicon { font-size: 44px; }
+  .popbox .card .fxname { font-size: 20px; }
+  .popbox .card .fxdesc { font-size: 12px; }
+  .popbox .msgs { font-size: 14px; line-height: 1.7; text-align: left; }
+  .popbox .close { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .opp-note { font-size: 12px; color: #9fd4ff; margin-left: 6px; }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -99,9 +123,9 @@
       <b>あそびかた</b>
       <ul>
         <li>「バ・モ・ス・か・ね・こ」の6種類を1枚ずつ手札にそろえたら勝ち。</li>
-        <li>手札は5枚。自分の番は、山札から1枚引いて、好きなカードを1枚捨てる。</li>
-        <li>5枚では6種類そろわないので、引いて手札が6枚以上になった瞬間がチャンス!</li>
-        <li>効果カードは捨てると効果が発動する。ターンの最後に手札が6枚以上なら5枚になるまで捨てる。</li>
+        <li>最初の手札は5枚。自分の番は、山札から1枚引いて、好きなカードを1枚捨てる(使う)。</li>
+        <li>手札は何枚でも持てる。ドローなどで手札を増やせばそろえやすくなる!</li>
+        <li>効果カードは捨てると効果が発動する。</li>
       </ul>
       <div id="fxList"></div>
     </div>
@@ -129,6 +153,7 @@
       <div class="pile"><div id="discardView"></div><span>捨て札</span></div>
     </div>
 
+    <div class="last hidden" id="lastPlay"></div>
     <div class="status" id="status"></div>
     <div class="actionbar" id="actionbar"></div>
 
@@ -145,6 +170,9 @@
   </section>
 </main>
 
+<!-- 相手がカードを使ったときのポップアップ -->
+<div id="popup" class="hidden"><div class="popbox" id="popbox"></div></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 // ===== Supabase の設定(無限階段と同じプロジェクトを使い回し) =====
@@ -155,7 +183,7 @@ const SUPABASE_KEY = 'sb_publishable_vTYcq-C9xWv47s3uV2Sj-Q_KxeaYkhu';
 // ===== カードの定義 =====
 const LETTERS = ['バ', 'モ', 'ス', 'か', 'ね', 'こ'];
 const LETTER_COLOR = { 'バ': 'var(--c-ba)', 'モ': 'var(--c-mo)', 'ス': 'var(--c-su)', 'か': 'var(--c-ka)', 'ね': 'var(--c-ne)', 'こ': 'var(--c-ko)' };
-const LETTER_COPIES = 5;     // 各文字カードの枚数
+const LETTER_COPIES = 4;     // 各文字カードの枚数
 
 // 効果カード。n は山札に入る枚数。効果を増やしたいときはここに足して、applyEffect にも処理を書く
 const EFFECTS = {
@@ -164,9 +192,20 @@ const EFFECTS = {
   steal:   { name: 'ぬすむ',   icon: '🫳', n: 2, desc: '相手の手札をランダムに1枚もらう' },
   slap:    { name: 'はたく',   icon: '💥', n: 3, desc: '相手の手札をランダムに1枚捨てさせる' },
   trade:   { name: 'とりかえ', icon: '🔁', n: 2, desc: '自分の1枚と相手のランダム1枚を交換' },
-  swapall: { name: 'いれかえ', icon: '🌀', n: 1, desc: '手札をまるごと相手と交換' },
+  swapall: { name: 'いれかえ', icon: '🌀', n: 2, desc: '手札をまるごと相手と交換' },
   reset:   { name: 'リセット', icon: '♻️', n: 2, desc: '自分の手札を全部捨てて5枚引き直す' },
   combo:   { name: 'コンボ',   icon: '⚡', n: 4, desc: 'バモス→2枚引く / かねこ→相手を2枚捨てさせる' },
+  bomb:    { name: 'ばくはつ', icon: '💣', n: 2, desc: 'おたがいの手札をランダムに2枚ずつ捨てる' },
+  typhoon: { name: 'たいふう', icon: '🌪️', n: 2, desc: 'おたがいの手札を混ぜて配り直す' },
+  robber:  { name: 'ごうとう', icon: '🦹', n: 2, desc: '相手の手札をランダムに2枚うばう' },
+  reveal:  { name: 'まるみえ', icon: '👀', n: 2, desc: '相手の手札をしばらく丸見えにする' },
+  freeze:  { name: 'ふぶき',   icon: '❄️', n: 2, desc: '相手の次のターンを休みにする' },
+  extra:   { name: 'もういっかい', icon: '🔂', n: 2, desc: 'このあと自分のターンがもう1回' },
+  snipe:   { name: 'ねらいうち', icon: '🎯', n: 2, desc: '相手の持っている文字を1種類ぜんぶ捨てさせる' },
+  beg:     { name: 'ねだる',   icon: '🥺', n: 2, desc: '自分にない文字を相手から1枚もらう' },
+  copy:    { name: 'コピー',   icon: '📋', n: 2, desc: '捨て札の一番上の効果をもう一度使う' },
+  lottery: { name: 'くじびき', icon: '🎰', n: 3, desc: 'ランダムな効果がどれか1つ発動' },
+  joker:   { name: 'ジョーカー', icon: '🤡', n: 2, desc: '持っていると好きな文字1枚の代わりになる(使っても効果なし)' },
 };
 // コンボカードの条件。手札に words の文字が全部あればボーナス
 const COMBOS = [
@@ -174,7 +213,7 @@ const COMBOS = [
   { words: ['か', 'ね', 'こ'], name: 'かねこ', desc: '相手の手札をランダムに2枚捨てさせる' },
 ];
 const comboHit = (hand, combo) => combo.words.every(L => hand.some(c => c.k === L));
-const HAND_SIZE = 5;
+const START_HAND = 5;   // 最初に配る枚数(手札の上限はなし)
 
 const isLetter = k => LETTERS.includes(k);
 const cardLabel = c => isLetter(c.k) ? `「${c.k}」` : `【${EFFECTS[c.k].name}】`;
@@ -190,7 +229,10 @@ function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
-const hasAll = hand => LETTERS.every(L => hand.some(c => c.k === L));
+// 足りない文字の数がジョーカーの枚数以下ならそろったことになる
+const missingLetters = hand => LETTERS.filter(L => !hand.some(c => c.k === L));
+const jokerCount = hand => hand.filter(c => c.k === 'joker').length;
+const hasAll = hand => missingLetters(hand).length <= jokerCount(hand);
 
 // ===== ゲームのルール(部屋を作った人=ホストの画面だけで実行される) =====
 // S がゲームの全状態。ホストが更新して、相手に丸ごと送る。
@@ -201,13 +243,21 @@ function newGame(players, first) {
     v: 0, players, first,
     deck: buildDeck(), discard: [], hands: [[], []],
     turn: first, phase: 'play', winner: null, log: [], newIds: [],
+    skip: [false, false],   // ふぶき:次のターンが休みか
+    extra: false,           // もういっかい:もう1ターンあるか
+    reveal: null,           // まるみえ:{ p: 見えている人, turns: 残りターン }
+    lastPlay: null,         // 直前に使われたカードと、その結果(画面表示用)
+    cur: null,
   };
-  for (let i = 0; i < HAND_SIZE; i++) for (const p of [0, 1]) S.hands[p].push(drawCard());
+  for (let i = 0; i < START_HAND; i++) for (const p of [0, 1]) S.hands[p].push(drawCard());
   addLog(`ゲーム開始!先攻は ${S.players[first].name}`);
   beginTurn();
 }
 
-function addLog(msg) { S.log.unshift(msg); S.log.length = Math.min(S.log.length, 40); }
+function addLog(msg) {
+  S.log.unshift(msg); S.log.length = Math.min(S.log.length, 40);
+  if (S.cur) S.cur.msgs.push(msg);   // 今の操作で起きたことを記録(ポップアップ用)
+}
 const pname = p => S.players[p].name;
 
 function drawCard() {
@@ -230,9 +280,15 @@ function beginTurn() {
   S.phase = 'play';
   S.newIds = drawTo(S.turn, 1).map(c => c.id);
   checkWin();
+  // 手札が0枚で山札も空なら、何もできないのでパス
+  if (S.phase === 'play' && S.hands[S.turn].length === 0) {
+    addLog(`${pname(S.turn)} は手札がないのでパス`);
+    S.turn = 1 - S.turn;
+    beginTurn();
+  }
 }
 
-// 6種類そろえるには手札が6枚以上いる。自分の番の途中で、手札に6種類そろった瞬間に勝ち
+// 自分の番の途中で、手札に6種類そろった瞬間に勝ち
 function checkWin() {
   if (S.phase !== 'over' && hasAll(S.hands[S.turn])) {
     S.winner = S.turn; S.phase = 'over';
@@ -240,13 +296,26 @@ function checkWin() {
   }
 }
 
+// 手札の上限はなし。カードを使ったらそのままターン終了
 function afterAction() {
-  if (S.hands[S.turn].length > HAND_SIZE) S.phase = 'trim';
-  else endTurn();
+  endTurn();
 }
 
 function endTurn() {
-  S.turn = 1 - S.turn;
+  if (S.reveal && --S.reveal.turns <= 0) S.reveal = null;
+  if (S.extra) {
+    S.extra = false;
+    addLog(`🔂 ${pname(S.turn)} のターンがもう1回!`);
+    beginTurn();
+    return;
+  }
+  let next = 1 - S.turn;
+  if (S.skip && S.skip[next]) {
+    S.skip[next] = false;
+    addLog(`❄️ ${pname(next)} はこおっていて休み`);
+    next = S.turn;
+  }
+  S.turn = next;
   beginTurn();
 }
 
@@ -314,9 +383,84 @@ function applyEffect(p, k) {
     case 'reset': {
       S.discard.push(...mine);
       S.hands[p] = [];
-      const got = drawTo(p, HAND_SIZE);
+      const got = drawTo(p, START_HAND);
       S.newIds = got.map(c => c.id);
       addLog(`${pname(p)} が【リセット】で手札を引き直した`);
+      break;
+    }
+    case 'bomb': {
+      for (const q of [p, opp]) {
+        const lost = [];
+        for (let i = 0; i < 2 && S.hands[q].length; i++) { const c = randomTake(S.hands[q]); S.discard.push(c); lost.push(cardLabel(c)); }
+        addLog(`💣 ${pname(q)} の${lost.join('') || '(なし)'}がふっとんだ`);
+      }
+      break;
+    }
+    case 'typhoon': {
+      const all = shuffle([...mine, ...theirs]);
+      S.hands[p] = []; S.hands[opp] = [];
+      all.forEach((c, i) => S.hands[i % 2 ? p : opp].push(c));
+      S.newIds = S.hands[p].map(c => c.id);
+      addLog(`🌪️ ${pname(p)} の【たいふう】で手札がぐちゃぐちゃに配り直された!`);
+      break;
+    }
+    case 'robber': {
+      let n = 0;
+      for (; n < 2 && theirs.length; n++) { const c = randomTake(theirs); mine.push(c); S.newIds.push(c.id); }
+      addLog(`🦹 ${pname(p)} が【ごうとう】で ${pname(opp)} から${n}枚うばった`);
+      break;
+    }
+    case 'reveal': {
+      S.reveal = { p: opp, turns: 3 };   // 相手のターンと、自分の次のターンの終わりまで
+      addLog(`👀 ${pname(opp)} の手札が丸見えに:${theirs.map(cardLabel).join('') || 'なし'}`);
+      break;
+    }
+    case 'freeze': {
+      S.skip = S.skip || [false, false];
+      S.skip[opp] = true;
+      addLog(`❄️ ${pname(p)} の【ふぶき】で ${pname(opp)} は次のターン休み`);
+      break;
+    }
+    case 'extra': {
+      S.extra = true;
+      addLog(`🔂 ${pname(p)} が【もういっかい】を使った`);
+      break;
+    }
+    case 'snipe': {
+      const kinds = [...new Set(theirs.filter(c => isLetter(c.k)).map(c => c.k))];
+      if (!kinds.length) { addLog(`🎯 【ねらいうち】は不発(相手に文字カードがない)`); break; }
+      const K = kinds[Math.floor(Math.random() * kinds.length)];
+      const hit = theirs.filter(c => c.k === K);
+      S.hands[opp] = theirs.filter(c => c.k !== K);
+      S.discard.push(...hit);
+      addLog(`🎯 ${pname(p)} の【ねらいうち】で ${pname(opp)} の「${K}」が${hit.length}枚ぜんぶ捨てられた`);
+      break;
+    }
+    case 'beg': {
+      const lack = missingLetters(mine);
+      const cand = theirs.filter(c => lack.includes(c.k));
+      if (!cand.length) { addLog(`🥺 【ねだる】は不発(相手が持っていなかった)`); break; }
+      const c = cand[Math.floor(Math.random() * cand.length)];
+      theirs.splice(theirs.indexOf(c), 1); mine.push(c); S.newIds = [c.id];
+      addLog(`🥺 ${pname(p)} が【ねだる】で ${pname(opp)} から${cardLabel(c)}をもらった`);
+      break;
+    }
+    case 'copy': {
+      const prev = S.discard[S.discard.length - 2];   // 一番上はコピー自身なので、その下
+      if (!prev || isLetter(prev.k) || prev.k === 'copy' || prev.k === 'joker') {
+        addLog(`📋 【コピー】は不発(捨て札の一番上が効果カードじゃなかった)`); break;
+      }
+      addLog(`📋 ${pname(p)} が【コピー】で【${EFFECTS[prev.k].name}】をもう一度発動!`);
+      return applyEffect(p, prev.k);
+    }
+    case 'lottery': {
+      const pool = Object.keys(EFFECTS).filter(k => !['copy', 'lottery', 'joker'].includes(k));
+      const k2 = pool[Math.floor(Math.random() * pool.length)];
+      addLog(`🎰 ${pname(p)} の【くじびき】の結果は…【${EFFECTS[k2].name}】!`);
+      return applyEffect(p, k2);
+    }
+    case 'joker': {
+      addLog(`🤡 ${pname(p)} が【ジョーカー】を捨てた(効果なし)`);
       break;
     }
   }
@@ -337,36 +481,39 @@ function applyAction(p, a) {
 
   if (S.phase === 'play' && a.type === 'play') {
     const card = hand.splice(idx, 1)[0];
-    S.discard.push(card);
-    S.newIds = [];
-    if (isLetter(card.k)) {
-      addLog(`${pname(p)} が${cardLabel(card)}を捨てた`);
-      afterAction();
-    } else {
-      const waiting = applyEffect(p, card.k);
-      checkWin();
-      if (!waiting && S.phase !== 'over') afterAction();
-    }
+    recordPlay(p, card.k, () => {
+      S.discard.push(card);
+      S.newIds = [];
+      if (isLetter(card.k)) {
+        addLog(`${pname(p)} が${cardLabel(card)}を捨てた`);
+        afterAction();
+      } else {
+        const waiting = applyEffect(p, card.k);
+        checkWin();
+        if (!waiting && S.phase !== 'over') afterAction();
+      }
+    });
     return true;
   }
   if (S.phase === 'trade' && a.type === 'trade') {
     const give = hand.splice(idx, 1)[0];
-    const theirs = S.hands[1 - p];
-    const got = randomTake(theirs);
-    theirs.push(give); hand.push(got);
-    S.newIds = [got.id];
-    addLog(`${pname(p)} が ${pname(1 - p)} とカードを1枚交換した`);
-    afterAction();
-    return true;
-  }
-  if (S.phase === 'trim' && a.type === 'trim') {
-    const card = hand.splice(idx, 1)[0];
-    S.discard.push(card);
-    addLog(`${pname(p)} が${cardLabel(card)}を捨てた`);
-    if (hand.length <= HAND_SIZE) endTurn();
+    recordPlay(p, 'trade', () => {
+      const theirs = S.hands[1 - p];
+      const got = randomTake(theirs);
+      theirs.push(give); hand.push(got);
+      S.newIds = [got.id];
+      addLog(`${pname(p)} が ${pname(1 - p)} に${cardLabel(give)}を渡して、1枚もらった`);
+      afterAction();
+    });
     return true;
   }
   return false;
+}
+
+// 1回の操作で起きたことをまとめて lastPlay に残す(相手の画面でポップアップ表示する)
+function recordPlay(p, k, fn) {
+  S.cur = { id: Math.random().toString(36).slice(2), p, k, msgs: [] };
+  try { fn(); } finally { S.lastPlay = S.cur; S.cur = null; }
 }
 
 // ===== 通信(Supabase Realtime Broadcast) =====
@@ -479,12 +626,18 @@ function render() {
 
   $('oppName').textContent = S.players[opp].name;
   $('myName').textContent = S.players[me].name + '(あなた)';
-  $('oppCount').textContent = `手札 ${S.hands[opp].length}枚`;
+  const oppSeen = S.phase === 'over' || (S.reveal && S.reveal.p === opp);
+  const notes = [];
+  if (S.reveal && S.reveal.p === opp) notes.push('👀 丸見え中');
+  if (S.skip && S.skip[opp]) notes.push('❄️ 次のターン休み');
+  $('oppCount').innerHTML = `手札 ${S.hands[opp].length}枚` + notes.map(n => `<span class="opp-note">${n}</span>`).join('');
   $('roomLabel').textContent = '部屋 ' + roomCode;
 
-  // 相手の手札(ゲーム終了時は公開)
+  // 相手の手札(ゲーム終了時と「まるみえ」中は表向き)
   const oh = $('oppHand'); oh.innerHTML = '';
-  S.hands[opp].forEach(c => oh.appendChild(cardEl(S.phase === 'over' ? c : null)));
+  S.hands[opp].forEach(c => oh.appendChild(cardEl(oppSeen ? c : null)));
+
+  renderLastPlay(me);
 
   // 山札と捨て札
   $('deckView').innerHTML = ''; $('deckView').appendChild(S.deck.length ? cardEl(null) : Object.assign(document.createElement('div'), { className: 'empty' }));
@@ -513,6 +666,12 @@ function render() {
     if (myHand.some(c => c.k === L)) s.classList.add('on');
     pg.appendChild(s);
   });
+  const jk = jokerCount(myHand);
+  if (jk) { const s = document.createElement('span'); s.className = 'joker'; s.textContent = `🤡×${jk}`; pg.appendChild(s); }
+  const myNotes = [];
+  if (S.reveal && S.reveal.p === me) myNotes.push('👀 あなたの手札は相手に丸見え');
+  if (S.skip && S.skip[me]) myNotes.push('❄️ 次のターンは休み');
+  $('myName').textContent = S.players[me].name + '(あなた)' + (myNotes.length ? ' ' + myNotes.join(' ') : '');
 
   // 状況の表示と操作ボタン
   const st = $('status'), bar = $('actionbar');
@@ -529,16 +688,14 @@ function render() {
     st.textContent = `${S.players[opp].name} の番です…`;
   } else {
     st.classList.add('mine');
-    const need = myHand.length - HAND_SIZE;
     const msg = {
       play: 'あなたの番:カードを1枚選んで、捨てる or 使う',
-      trim: `手札が多い!あと${need}枚 捨ててください`,
       trade: '【とりかえ】相手に渡すカードを1枚選んでください',
     }[S.phase];
     st.textContent = msg;
     if (sel) {
       if (S.phase === 'play') {
-        if (isLetter(sel.k)) button(`${cardLabel(sel)}を捨てる`, () => act({ type: 'play', cardId: sel.id }));
+        if (isLetter(sel.k) || sel.k === 'joker') button(`${cardLabel(sel)}を捨てる`, () => act({ type: 'play', cardId: sel.id }));
         else {
           button(`【${EFFECTS[sel.k].name}】を使う`, () => act({ type: 'play', cardId: sel.id }));
           const d = document.createElement('span'); d.className = 'desc'; d.textContent = EFFECTS[sel.k].desc; bar.appendChild(d);
@@ -547,9 +704,6 @@ function render() {
             d.textContent = COMBOS.map(cb => `${comboHit(rest, cb) ? '✅' : '❌'} ${cb.name}:${cb.desc}`).join(' / ');
           }
         }
-      } else if (S.phase === 'trim') {
-        button(`${cardLabel(sel)}を捨てる`, () => act({ type: 'trim', cardId: sel.id }));
-        if (!isLetter(sel.k)) { const d = document.createElement('span'); d.className = 'desc'; d.textContent = '※ この捨て方では効果は発動しません'; bar.appendChild(d); }
       } else if (S.phase === 'trade') {
         button(`${cardLabel(sel)}を渡す`, () => act({ type: 'trade', cardId: sel.id }));
       }
@@ -559,6 +713,37 @@ function render() {
   // ログ
   $('log').innerHTML = S.log.map(l => `<div>${escapeHtml(l)}</div>`).join('');
 }
+// 直前に使われたカードを表示。相手が効果カードを使ったときは大きくポップアップ
+let shownPlayId = undefined, popupTimer = null;
+function renderLastPlay(me) {
+  const lp = S.lastPlay, box = $('lastPlay');
+  if (!lp) { box.classList.add('hidden'); shownPlayId = null; return; }
+  const who = lp.p === me ? 'あなた' : S.players[lp.p].name;
+  const verb = isLetter(lp.k) || lp.k === 'joker' ? 'を捨てた' : 'を使った!';
+  const label = isLetter(lp.k) ? `「${lp.k}」` : `【${EFFECTS[lp.k].name}】`;
+  const msgs = lp.msgs.map(m => `<div>・${escapeHtml(m)}</div>`).join('');
+  box.className = 'last ' + (lp.p === me ? 'me' : 'opp');
+  box.innerHTML = '';
+  box.appendChild(cardEl({ k: lp.k }, { small: true }));
+  const what = document.createElement('div'); what.className = 'what';
+  what.innerHTML = `<b>${escapeHtml(who)}</b> が ${label}${verb}${msgs}`;
+  box.appendChild(what);
+
+  if (shownPlayId === undefined) { shownPlayId = lp.id; return; }   // 開いた直後は出さない
+  if (lp.id === shownPlayId) return;
+  shownPlayId = lp.id;
+  if (lp.p === me || isLetter(lp.k)) return;   // 相手の効果カードだけポップアップ
+  const pb = $('popbox');
+  pb.innerHTML = `<h2><b>${escapeHtml(who)}</b> が ${label}${verb}</h2>`;
+  pb.appendChild(cardEl({ k: lp.k }));
+  const m = document.createElement('div'); m.className = 'msgs'; m.innerHTML = msgs; pb.appendChild(m);
+  pb.insertAdjacentHTML('beforeend', '<div class="close">タップで閉じる</div>');
+  $('popup').classList.remove('hidden');
+  clearTimeout(popupTimer);
+  popupTimer = setTimeout(() => $('popup').classList.add('hidden'), 4000);
+}
+$('popup').onclick = () => $('popup').classList.add('hidden');
+
 const escapeHtml = s => s.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 // ===== ロビーの操作 =====
