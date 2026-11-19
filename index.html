@@ -24,6 +24,7 @@
   input { width: 100%; padding: 10px; font-size: 16px; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; }
   button { padding: 10px 16px; font-size: 15px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; cursor: pointer; font-weight: bold; }
   button.sub { background: var(--panel2); border: 1px solid var(--line); }
+  button.mini { padding: 3px 10px; font-size: 12px; background: var(--panel2); border: 1px solid var(--line); margin-left: 6px; }
   button:disabled { opacity: 0.4; cursor: default; }
   .row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
   .row > * { flex: 1; min-width: 120px; }
@@ -86,6 +87,8 @@
   .popbox { background: var(--panel); border: 2px solid #ff5d6c; border-radius: 16px; padding: 18px 20px; text-align: center; width: 100%; max-width: 360px; animation: pop 0.25s ease-out; }
   .popbox h2 { margin: 0 0 10px; font-size: 18px; }
   .popbox h2 b { color: #ff5d6c; }
+  .popbox.me { border-color: var(--accent); }
+  .popbox.me h2 b { color: var(--accent); }
   .popbox .card { margin: 0 auto 12px; width: 120px; height: 170px; }
   .popbox .card .big { font-size: 64px; }
   .popbox .card .fxicon { font-size: 44px; }
@@ -137,6 +140,53 @@
   #game .progress span.joker { font-size: 11px; padding: 0 6px; }
   #game .log { max-height: 58px; font-size: 12px; line-height: 1.5; }
 
+  /* デメリットカード */
+  .card.fx.bad { background: #2b1838; border-color: #8e44ad; }
+  .card.fx.bad .fxname { color: #e8c6ff; }
+  .card.fx.bad .fxdesc { color: #cfb3e0; }
+
+  /* 待合室のメンバー */
+  .plist { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 12px 0 4px; }
+  .plist span { background: var(--panel2); border: 1px solid var(--line); padding: 4px 12px; border-radius: 14px; font-size: 14px; }
+
+  /* 相手たち(1〜3人) */
+  .opps { display: grid; gap: 6px; margin-bottom: 6px; grid-template-columns: 1fr; }
+  .opps.n2 { grid-template-columns: 1fr 1fr; }
+  .opps.n3 { grid-template-columns: 1fr 1fr 1fr; }
+  #game .opps .panel { margin: 0; min-width: 0; }
+  .opp-panel.turn, #myPanel.turn { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+  .opp-panel.gone { opacity: 0.4; }
+  .opp-panel .pname { font-weight: bold; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .opp-panel.pick { cursor: pointer; border-color: #ff5d6c; box-shadow: 0 0 0 2px #ff5d6c; }
+  .opp-panel.pick:hover { background: #2a2033; }
+  .target-btn { width: 100%; margin-top: 6px; padding: 6px; font-size: 13px; background: #ff5d6c; }
+  .opps.n2 .hand.opp .card, .opps.n3 .hand.opp .card { width: 24px !important; height: 34px !important; border-width: 1.5px; padding: 1px; border-radius: 5px; }
+  .opps.n2 .hand.opp .card .big, .opps.n3 .hand.opp .card .big { font-size: 13px !important; }
+  .opps.n2 .hand.opp .card .fxicon, .opps.n3 .hand.opp .card .fxicon { font-size: 11px !important; }
+  .opps.n2 .hand.opp .card .fxname, .opps.n3 .hand.opp .card .fxname { display: none; }
+  .opps.n2 .hand.opp, .opps.n3 .hand.opp { gap: 3px; }
+  .hand .more { font-size: 12px; color: var(--muted); align-self: center; }
+  @media (max-width: 560px) { .opps.n3 { grid-template-columns: 1fr 1fr; } }
+
+  /* カード一覧 */
+  #cardsModal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 20; display: grid; place-items: center; padding: 12px; }
+  .cardsbox { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; width: 100%; max-width: 640px; max-height: calc(100vh - 24px); overflow-y: auto; }
+  .cardsbox h2 { margin: 0 0 6px; font-size: 18px; }
+  .cardsbox h3.grp { margin: 14px 0 6px; font-size: 14px; color: var(--gold); }
+  .cardsbox h3.grp.bad { color: #c99bff; }
+  .ctable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ctable td { padding: 4px 6px; border-top: 1px solid var(--line); vertical-align: middle; }
+  .ctable td.ci { width: 40px; }
+  .ctable td.ci .card { width: 34px; height: 48px; border-width: 2px; padding: 1px; }
+  .ctable td.ci .card .big { font-size: 18px; }
+  .ctable td.ci .card .fxicon { font-size: 14px; }
+  .ctable td.ci .card .fxname, .ctable td.ci .card .fxdesc { display: none; }
+  .ctable td.cn { font-weight: bold; white-space: nowrap; }
+  .ctable td.cp { white-space: nowrap; width: 110px; font-variant-numeric: tabular-nums; }
+  .ctable .bar { display: inline-block; width: 50px; height: 6px; background: var(--panel2); border-radius: 3px; margin-right: 6px; vertical-align: middle; overflow: hidden; }
+  .ctable .bar i { display: block; height: 100%; background: var(--accent); }
+  .ctable td.cd { color: var(--muted); }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -152,7 +202,7 @@
     </div>
     <div class="panel">
       <button id="createBtn" style="width:100%">部屋を作る</button>
-      <p class="muted">作ったら、表示される部屋コード(またはリンク)を相手に送ってね。</p>
+      <p class="muted">作ったら、表示される部屋コード(またはリンク)を友達に送ってね。2〜4人で遊べます。</p>
     </div>
     <div class="panel">
       <div class="row">
@@ -163,13 +213,14 @@
     <div class="panel rules">
       <b>あそびかた</b>
       <ul>
-        <li>「バ・モ・ス・か・ね・こ」の6種類を1枚ずつ手札にそろえたら勝ち。</li>
-        <li>最初の手札は5枚。自分の番は、山札から1枚引いて、好きなカードを1枚捨てる(使う)。</li>
+        <li>2〜4人で遊べる。「バ・モ・ス・か・ね・こ」の6種類を1枚ずつ手札にそろえたら勝ち。</li>
+        <li>最初の手札は5枚。自分の番は、山札から1枚引いて、好きなカードを必ず1枚捨てる(使う)。</li>
         <li>手札は何枚でも持てる。ドローなどで手札を増やせばそろえやすくなる!</li>
         <li>効果カードは捨てると効果が発動する。</li>
-        <li>捨てたくないときは「捨てずにターン終了」もできる。</li>
+        <li>「相手」に使う効果は、相手が2人以上いるときは使う人がえらぶ。</li>
+        <li>持っているだけで損をする<b>デメリットカード</b>もたまに出る。捨てれば消える。</li>
       </ul>
-      <div id="fxList"></div>
+      <button class="sub" id="cardsBtn" style="width:100%">📋 カード一覧(出る確率)を見る</button>
     </div>
   </section>
 
@@ -179,16 +230,16 @@
       <div class="muted">部屋コード</div>
       <div class="code" id="roomCode"></div>
       <button id="copyBtn" class="sub">招待リンクをコピー</button>
-      <p class="muted" id="waitMsg">相手が入るのを待っています…</p>
+      <div class="plist" id="playerList"></div>
+      <p class="muted" id="waitMsg">ほかの人が入るのを待っています…</p>
+      <button id="startBtn" class="hidden" style="width:100%;margin-bottom:8px">スタート</button>
+      <button class="sub" id="backBtn">← 最初の画面に戻る</button>
     </div>
   </section>
 
   <!-- ===== ゲーム ===== -->
   <section id="game" class="hidden">
-    <div class="panel">
-      <div class="zone-title"><span id="oppName">相手</span><span id="oppCount"></span></div>
-      <div class="hand opp" id="oppHand"></div>
-    </div>
+    <div class="opps" id="opps"></div>
 
     <div class="mid">
       <div class="table">
@@ -201,19 +252,22 @@
     <div class="status" id="status"></div>
     <div class="actionbar" id="actionbar"></div>
 
-    <div class="panel">
+    <div class="panel" id="myPanel">
       <div class="zone-title"><span id="myName">あなた</span><div class="progress" id="progress"></div></div>
       <div class="hand" id="myHand"></div>
     </div>
 
     <div class="panel">
-      <div class="zone-title"><span>ログ</span><span class="muted" id="roomLabel"></span></div>
+      <div class="zone-title"><span>ログ</span><span><span class="muted" id="roomLabel"></span> <button class="mini" id="cardsBtn2">📋 カード一覧</button><button class="mini" id="leaveBtn">← 退出</button></span></div>
       <div class="log" id="log"></div>
     </div>
   </section>
 </main>
 
-<!-- 相手がカードを使ったときのポップアップ -->
+<!-- カード一覧(出る確率) -->
+<div id="cardsModal" class="hidden"><div class="cardsbox" id="cardsBox"></div></div>
+
+<!-- カードが使われたときのポップアップ -->
 <div id="popup" class="hidden"><div class="popbox" id="popbox"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -226,36 +280,41 @@ const SUPABASE_KEY = 'sb_publishable_vTYcq-C9xWv47s3uV2Sj-Q_KxeaYkhu';
 // ===== カードの定義 =====
 const LETTERS = ['バ', 'モ', 'ス', 'か', 'ね', 'こ'];
 const LETTER_COLOR = { 'バ': 'var(--c-ba)', 'モ': 'var(--c-mo)', 'ス': 'var(--c-su)', 'か': 'var(--c-ka)', 'ね': 'var(--c-ne)', 'こ': 'var(--c-ko)' };
-const LETTER_COPIES = 4;     // 各文字カードの枚数
+const LETTER_WEIGHT = 4;     // 各文字カードの出やすさ(下の w と同じ単位)
 
-// 効果カード。n は山札に入る枚数。効果を増やしたいときはここに足して、applyEffect にも処理を書く
+// 効果カード。w は出やすさ。引くたびに「そのカードの w ÷ 全部の w の合計」の確率で出る
+// 効果を増やしたいときはここに足して、applyEffect にも処理を書く
 const EFFECTS = {
-  draw2:   { name: 'ドロー',   icon: '🃏', n: 5, desc: '山札から2枚引く' },
-  draw3:   { name: 'だいドロー', icon: '🎁', n: 3, desc: '山札から3枚引く' },
-  okawari: { name: 'おかわり', icon: '🍚', n: 4, desc: '1枚引いて、もう1回カードを使える' },
-  share:   { name: 'おすそわけ', icon: '🍰', n: 2, desc: '自分は2枚、相手は1枚引く' },
-  dig:     { name: 'さがしもの', icon: '🔍', n: 3, desc: '自分が持っていない文字が出るまで山札をめくってもらう' },
-  steal:   { name: 'ぬすむ',   icon: '🫳', n: 2, desc: '相手の手札をランダムに1枚もらう' },
-  slap:    { name: 'はたく',   icon: '💥', n: 3, desc: '相手の手札をランダムに1枚捨てさせる' },
-  trade:   { name: 'とりかえ', icon: '🔁', n: 2, desc: '自分の1枚と相手のランダム1枚を交換' },
-  swapall: { name: 'いれかえ', icon: '🌀', n: 2, desc: '手札をまるごと相手と交換' },
-  reset:   { name: 'リセット', icon: '♻️', n: 2, desc: '自分の手札を全部捨てて5枚引き直す' },
-  combo:   { name: 'コンボ',   icon: '⚡', n: 4, desc: 'バモス→2枚引く / かねこ→相手を2枚捨てさせる' },
-  bomb:    { name: 'ばくはつ', icon: '💣', n: 2, desc: 'おたがいの手札をランダムに2枚ずつ捨てる' },
-  typhoon: { name: 'たいふう', icon: '🌪️', n: 2, desc: 'おたがいの手札を混ぜて配り直す' },
-  robber:  { name: 'ごうとう', icon: '🦹', n: 2, desc: '相手の手札をランダムに2枚うばう' },
-  reveal:  { name: 'まるみえ', icon: '👀', n: 2, desc: '相手の手札をしばらく丸見えにする' },
-  freeze:  { name: 'ふぶき',   icon: '❄️', n: 2, desc: '相手の次のターンを休みにする' },
-  extra:   { name: 'もういっかい', icon: '🔂', n: 2, desc: 'このあと自分のターンがもう1回' },
-  snipe:   { name: 'ねらいうち', icon: '🎯', n: 2, desc: '相手の持っている文字を1種類ぜんぶ捨てさせる' },
-  beg:     { name: 'ねだる',   icon: '🥺', n: 2, desc: '自分にない文字を相手から1枚もらう' },
-  copy:    { name: 'コピー',   icon: '📋', n: 2, desc: '捨て札の一番上の効果をもう一度使う' },
-  lottery: { name: 'くじびき', icon: '🎰', n: 3, desc: 'ランダムな効果がどれか1つ発動' },
-  joker:   { name: 'ジョーカー', icon: '🤡', n: 2, desc: '持っていると好きな文字1枚の代わりになる(使っても効果なし)' },
+  draw2:   { name: 'ドロー',   icon: '🃏', w: 3, desc: '山札から2枚引く' },
+  draw3:   { name: 'だいドロー', icon: '🎁', w: 1, desc: '山札から3枚引く' },
+  okawari: { name: 'おかわり', icon: '🍚', w: 3, desc: '1枚引いて、もう1回カードを使える' },
+  share:   { name: 'おすそわけ', icon: '🍰', w: 2, desc: '全員が1枚ずつ引く' },
+  dig:     { name: 'さがしもの', icon: '🔍', w: 2, desc: '自分が持っていない文字が出るまで山札をめくってもらう' },
+  steal:   { name: 'ぬすむ',   icon: '🫳', w: 2, desc: '相手の手札をランダムに1枚もらう' },
+  slap:    { name: 'はたく',   icon: '💥', w: 2, desc: '相手の手札をランダムに1枚捨てさせる' },
+  trade:   { name: 'とりかえ', icon: '🔁', w: 2, desc: '自分の1枚と相手のランダム1枚を交換' },
+  swapall: { name: 'いれかえ', icon: '🌀', w: 2, desc: '手札をまるごと相手と交換' },
+  reset:   { name: 'リセット', icon: '♻️', w: 2, desc: '自分の手札を全部捨てて5枚引き直す' },
+  combo:   { name: 'コンボ',   icon: '⚡', w: 4, desc: 'バモス→1枚引く / かねこ→相手を2枚捨てさせる' },
+  bomb:    { name: 'ばくはつ', icon: '💣', w: 1, desc: 'おたがいの手札をランダムに2枚ずつ捨てる' },
+  typhoon: { name: 'たいふう', icon: '🌪️', w: 2, desc: 'おたがいの手札を混ぜて配り直す' },
+  robber:  { name: 'ごうとう', icon: '🦹', w: 1, desc: '相手の手札をランダムに2枚うばう' },
+  reveal:  { name: 'まるみえ', icon: '👀', w: 2, desc: '相手の手札をしばらく丸見えにする' },
+  freeze:  { name: 'ふぶき',   icon: '❄️', w: 2, desc: '相手の次のターンを休みにする' },
+  extra:   { name: 'もういっかい', icon: '🔂', w: 2, desc: 'このあと自分のターンがもう1回' },
+  snipe:   { name: 'ねらいうち', icon: '🎯', w: 1, desc: '相手の持っている文字を1種類ぜんぶ捨てさせる' },
+  beg:     { name: 'ねだる',   icon: '🥺', w: 2, desc: '自分にない文字を相手から1枚もらう' },
+  copy:    { name: 'コピー',   icon: '📋', w: 2, desc: '捨て札の一番上の効果をもう一度使う' },
+  lottery: { name: 'くじびき', icon: '🎰', w: 3, desc: 'ランダムな効果がどれか1つ発動' },
+  joker:   { name: 'ジョーカー', icon: '🤡', w: 1, desc: '持っていると好きな文字1枚の代わりになる(使っても効果なし)' },
+  // ↓ デメリットカード(bad: true)。手札に持っているだけで損をする。捨てれば消える
+  noroi:   { name: 'のろい',   icon: '🦠', w: 1, bad: true, short: 'のろい中:そろっても勝てない', desc: '持っている間は6種類そろっても勝てない' },
+  omori:   { name: 'おもり',   icon: '🪨', w: 1, bad: true, short: 'おもり:ターンのはじめに引けない', desc: '持っている間はターンのはじめにカードを引けない' },
+  mushi:   { name: 'むしくい', icon: '🐛', w: 1, bad: true, short: 'むしくい:文字カードが食べられる', desc: '持っている間、ターンのはじめに文字カードが1枚ランダムに捨てられる' },
 };
 // コンボカードの条件。手札に words の文字が全部あればボーナス
 const COMBOS = [
-  { words: ['バ', 'モ', 'ス'], name: 'バモス', desc: '山札から2枚引く' },
+  { words: ['バ', 'モ', 'ス'], name: 'バモス', desc: '山札から1枚引く' },
   { words: ['か', 'ね', 'こ'], name: 'かねこ', desc: '相手の手札をランダムに2枚捨てさせる' },
 ];
 const comboHit = (hand, combo) => combo.words.every(L => hand.some(c => c.k === L));
@@ -264,12 +323,17 @@ const START_HAND = 5;   // 最初に配る枚数(手札の上限はなし)
 const isLetter = k => LETTERS.includes(k);
 const cardLabel = c => isLetter(c.k) ? `「${c.k}」` : `【${EFFECTS[c.k].name}】`;
 
-function buildDeck() {
-  const deck = [];
-  let id = 0;
-  for (const L of LETTERS) for (let i = 0; i < LETTER_COPIES; i++) deck.push({ id: id++, k: L });
-  for (const [k, e] of Object.entries(EFFECTS)) for (let i = 0; i < e.n; i++) deck.push({ id: id++, k });
-  return shuffle(deck);
+// 引けるカードの一覧と出やすさ。山札の枚数は決まっていなくて、毎回この確率で完全ランダムに出る
+const CARD_WEIGHTS = [
+  ...LETTERS.map(L => [L, LETTER_WEIGHT]),
+  ...Object.entries(EFFECTS).map(([k, e]) => [k, e.w]),
+];
+const TOTAL_WEIGHT = CARD_WEIGHTS.reduce((s, [, w]) => s + w, 0);
+const chance = w => Math.round(w / TOTAL_WEIGHT * 1000) / 10;   // 確率(%)
+function randomKind() {
+  let r = Math.random() * TOTAL_WEIGHT;
+  for (const [k, w] of CARD_WEIGHTS) { if ((r -= w) < 0) return k; }
+  return CARD_WEIGHTS[0][0];
 }
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
@@ -278,26 +342,35 @@ function shuffle(a) {
 // 足りない文字の数がジョーカーの枚数以下ならそろったことになる
 const missingLetters = hand => LETTERS.filter(L => !hand.some(c => c.k === L));
 const jokerCount = hand => hand.filter(c => c.k === 'joker').length;
-const hasAll = hand => missingLetters(hand).length <= jokerCount(hand);
+// 【のろい】を持っていると、そろっていても勝てない
+const hasAll = hand => !hand.some(c => c.k === 'noroi') && missingLetters(hand).length <= jokerCount(hand);
 
 // ===== ゲームのルール(部屋を作った人=ホストの画面だけで実行される) =====
-// S がゲームの全状態。ホストが更新して、相手に丸ごと送る。
+// S がゲームの全状態。ホストが更新して、全員に丸ごと送る。
 let S = null;
+const MAX_PLAYERS = 4;
+const rid = () => Math.random().toString(36).slice(2);
+
+// 相手を1人えらぶ効果(相手が2人以上いるときは、使った人がえらぶ)
+const TARGETED = ['steal', 'slap', 'trade', 'swapall', 'robber', 'reveal', 'freeze', 'snipe', 'beg'];
 
 function newGame(players, first) {
   S = {
     v: S ? S.v : 0,   // 再戦でも番号を戻さない(戻すとゲストが新しい状態を無視してしまう)
     players, first, again: false,
-    deck: buildDeck(), discard: [], hands: [[], []],
+    nextId: 0, discard: [], hands: players.map(() => []),
     turn: first, phase: 'play', winner: null, log: [], newIds: [],
-    skip: [false, false],   // ふぶき:次のターンが休みか
-    extra: false,           // もういっかい:もう1ターンあるか
-    reveal: null,           // まるみえ:{ p: 見えている人, turns: 残りターン }
-    lastPlay: null,         // 直前に使われたカードと、その結果(画面表示用)
+    skip: players.map(() => false),   // ふぶき:次のターンが休みか
+    gone: players.map(() => false),   // 途中で部屋を出た人
+    extra: false,                     // もういっかい:もう1ターンあるか
+    reveal: null,     // まるみえ:{ p: 見えている人, by: 使った人, left: 使った人のターンがあと何回終わったら戻るか }
+    pending: null,    // 相手をえらぶのを待っている効果 { k, card, msgs }
+    tradeTo: null,    // とりかえの相手
+    lastPlay: null,   // 直前に使われたカードと、その結果(画面表示用)
     cur: null,
   };
-  for (let i = 0; i < START_HAND; i++) for (const p of [0, 1]) S.hands[p].push(drawCard());
-  addLog(`ゲーム開始!先攻は ${S.players[first].name}`);
+  for (let i = 0; i < START_HAND; i++) for (let p = 0; p < players.length; p++) S.hands[p].push(drawCard());
+  addLog(`ゲーム開始!(${players.length}人)先攻は ${pname(first)}`);
   beginTurn();
 }
 
@@ -306,19 +379,24 @@ function addLog(msg) {
   if (S.cur) S.cur.msgs.push(msg);   // 今の操作で起きたことを記録(ポップアップ用)
 }
 const pname = p => S.players[p].name;
-
-function drawCard() {
-  if (S.deck.length === 0) {
-    if (S.discard.length === 0) return null;
-    S.deck = shuffle(S.discard);
-    S.discard = [];
-    addLog('山札がなくなったので、捨て札を混ぜて山札にした');
-  }
-  return S.deck.pop();
+const activePlayers = () => S.players.map((_, i) => i).filter(i => !S.gone[i]);
+const opponentsOf = p => activePlayers().filter(i => i !== p);
+function nextPlayer(from) {
+  const n = S.players.length;
+  for (let d = 1; d <= n; d++) { const i = (from + d) % n; if (!S.gone[i]) return i; }
+  return from;
 }
+
+// 山札は無限。引くたびに確率で新しいカードを作る
+function drawCard() {
+  S.nextId = (S.nextId || 0) + 1;
+  return { id: S.nextId, k: randomKind() };
+}
+// 捨て札は表示用。たまりすぎないように最近の分だけ残す
+function trimDiscard() { if (S.discard.length > 30) S.discard.splice(0, S.discard.length - 30); }
 function drawTo(p, n) {
   const got = [];
-  for (let i = 0; i < n; i++) { const c = drawCard(); if (c) { S.hands[p].push(c); got.push(c); } }
+  for (let i = 0; i < n; i++) { const c = drawCard(); S.hands[p].push(c); got.push(c); }
   return got;
 }
 const randomTake = hand => hand.splice(Math.floor(Math.random() * hand.length), 1)[0];
@@ -326,14 +404,26 @@ const randomTake = hand => hand.splice(Math.floor(Math.random() * hand.length), 
 function beginTurn() {
   S.phase = 'play';
   S.again = false;
-  S.newIds = drawTo(S.turn, 1).map(c => c.id);
-  checkWin();
-  // 手札が0枚で山札も空なら、何もできないのでパス
-  if (S.phase === 'play' && S.hands[S.turn].length === 0) {
-    addLog(`${pname(S.turn)} は手札がないのでパス`);
-    S.turn = 1 - S.turn;
-    beginTurn();
+  S.pending = null; S.tradeTo = null;
+  const hand = S.hands[S.turn];
+  // おもり:持っているとターンのはじめにカードを引けない
+  if (hand.some(c => c.k === 'omori')) {
+    S.newIds = [];
+    addLog(`🪨 ${pname(S.turn)} は【おもり】のせいでカードを引けない`);
+  } else {
+    S.newIds = drawTo(S.turn, 1).map(c => c.id);
   }
+  // むしくい:持っている枚数だけ、ターンのはじめに文字カードがランダムに捨てられる
+  const bugs = hand.filter(c => c.k === 'mushi').length;
+  for (let i = 0; i < bugs; i++) {
+    const letters = S.hands[S.turn].filter(c => isLetter(c.k));
+    if (!letters.length) break;
+    const c = letters[Math.floor(Math.random() * letters.length)];
+    S.hands[S.turn].splice(S.hands[S.turn].indexOf(c), 1);
+    S.discard.push(c);
+    addLog(`🐛 ${pname(S.turn)} の${cardLabel(c)}が【むしくい】に食べられた`);
+  }
+  checkWin();
 }
 
 // 自分の番の途中で、手札に6種類そろった瞬間に勝ち
@@ -350,30 +440,38 @@ function afterAction() {
 }
 
 function endTurn() {
-  if (S.reveal && --S.reveal.turns <= 0) S.reveal = null;
+  if (S.reveal && S.reveal.by === S.turn && --S.reveal.left <= 0) S.reveal = null;
   if (S.extra) {
     S.extra = false;
     addLog(`🔂 ${pname(S.turn)} のターンがもう1回!`);
     beginTurn();
     return;
   }
-  let next = 1 - S.turn;
-  if (S.skip && S.skip[next]) {
+  let next = nextPlayer(S.turn);
+  for (let guard = 0; guard < S.players.length && S.skip[next]; guard++) {
     S.skip[next] = false;
     addLog(`❄️ ${pname(next)} はこおっていて休み`);
-    next = S.turn;
+    next = nextPlayer(next);
   }
   S.turn = next;
   beginTurn();
 }
 
-function applyEffect(p, k) {
-  const opp = 1 - p, mine = S.hands[p], theirs = S.hands[opp];
+// 効果を発動する。t は相手(えらんだ人)。待ちが発生したら true
+function applyEffect(p, k, t) {
+  const opps = opponentsOf(p);
+  const needsTarget = TARGETED.includes(k) || (k === 'combo' && comboHit(S.hands[p], COMBOS[1]));
+  if (needsTarget && t === undefined) {
+    if (opps.length === 0) { addLog('相手がいなかった'); return false; }
+    if (opps.length === 1) t = opps[0];
+    else { S.phase = 'target'; S.pending = { k }; return true; }   // だれにするか、えらぶまで待つ
+  }
+  const mine = S.hands[p], theirs = t !== undefined ? S.hands[t] : null;
   switch (k) {
     case 'draw2': {
       const got = drawTo(p, 2);
       S.newIds = got.map(c => c.id);
-      addLog(`${pname(p)} が【ドロー】で${got.length}枚引いた`);
+      addLog(`🃏 ${pname(p)} が【ドロー】で${got.length}枚引いた`);
       break;
     }
     case 'draw3': {
@@ -383,10 +481,10 @@ function applyEffect(p, k) {
       break;
     }
     case 'share': {
-      const got = drawTo(p, 2);
+      const got = drawTo(p, 1);
       S.newIds = got.map(c => c.id);
-      drawTo(opp, 1);
-      addLog(`🍰 ${pname(p)} の【おすそわけ】:${pname(p)} は${got.length}枚、${pname(opp)} は1枚引いた`);
+      opps.forEach(q => drawTo(q, 1));
+      addLog(`🍰 ${pname(p)} の【おすそわけ】:全員が1枚ずつ引いた`);
       break;
     }
     case 'dig': {
@@ -396,7 +494,6 @@ function applyEffect(p, k) {
       let found = null;
       for (let i = 0; i < 10 && lack.length; i++) {
         const c = drawCard();
-        if (!c) break;
         if (lack.includes(c.k)) { found = c; break; }
         flipped.push(c);
       }
@@ -414,52 +511,53 @@ function applyEffect(p, k) {
       S.newIds = got.map(c => c.id);
       S.phase = 'play';
       S.again = true;
-      addLog(`${pname(p)} が【おかわり】で1枚引いて、もう1回カードを使う`);
+      addLog(`🍚 ${pname(p)} が【おかわり】で1枚引いて、もう1回カードを使う`);
       return true;   // もう1枚使うまでターンは終わらない
     }
     case 'combo': {
       // 条件は使う前の手札で判定(両方そろっていれば両方発動)
       const [bamosu, kaneko] = COMBOS.map(cb => comboHit(mine, cb));
-      if (!bamosu && !kaneko) { addLog(`${pname(p)} の【コンボ】は不発だった…`); break; }
+      if (!bamosu && !kaneko) { addLog(`⚡ ${pname(p)} の【コンボ】は不発だった…`); break; }
       if (bamosu) {
-        const got = drawTo(p, 2);
+        const got = drawTo(p, 1);
         S.newIds = got.map(c => c.id);
-        addLog(`${pname(p)} の【コンボ】バモス!${got.length}枚引いた`);
+        addLog(`⚡ ${pname(p)} の【コンボ】バモス!${got.length}枚引いた`);
       }
-      if (kaneko) {
+      if (kaneko && theirs) {
         const lost = [];
         for (let i = 0; i < 2 && theirs.length; i++) { const c = randomTake(theirs); S.discard.push(c); lost.push(cardLabel(c)); }
-        drawTo(opp, lost.length);
-        addLog(`${pname(p)} の【コンボ】かねこ!${pname(opp)} の${lost.join('')}が捨てられた`);
+        drawTo(t, lost.length);
+        addLog(`⚡ ${pname(p)} の【コンボ】かねこ!${pname(t)} の${lost.join('')}が捨てられた`);
       }
       break;
     }
     case 'steal': {
-      if (!theirs.length) { addLog('相手の手札がなかった'); break; }
+      if (!theirs.length) { addLog(`${pname(t)} の手札がなかった`); break; }
       const c = randomTake(theirs);
       mine.push(c); S.newIds = [c.id];
-      drawTo(opp, 1);
-      addLog(`${pname(p)} が【ぬすむ】で ${pname(opp)} から1枚うばった`);
+      drawTo(t, 1);
+      addLog(`🫳 ${pname(p)} が【ぬすむ】で ${pname(t)} から1枚うばった`);
       break;
     }
     case 'slap': {
-      if (!theirs.length) { addLog('相手の手札がなかった'); break; }
+      if (!theirs.length) { addLog(`${pname(t)} の手札がなかった`); break; }
       const c = randomTake(theirs);
       S.discard.push(c);
-      drawTo(opp, 1);
-      addLog(`${pname(p)} の【はたく】で ${pname(opp)} の${cardLabel(c)}が捨てられた`);
+      drawTo(t, 1);
+      addLog(`💥 ${pname(p)} の【はたく】で ${pname(t)} の${cardLabel(c)}が捨てられた`);
       break;
     }
     case 'trade': {
       if (!mine.length || !theirs.length) { addLog('交換できるカードがなかった'); break; }
       S.phase = 'trade';
-      addLog(`${pname(p)} が【とりかえ】を使った`);
+      S.tradeTo = t;
+      addLog(`🔁 ${pname(p)} が ${pname(t)} に【とりかえ】を使った`);
       return true;   // 渡すカードを選ぶまで待つ
     }
     case 'swapall': {
-      [S.hands[p], S.hands[opp]] = [S.hands[opp], S.hands[p]];
+      [S.hands[p], S.hands[t]] = [S.hands[t], S.hands[p]];
       S.newIds = S.hands[p].map(c => c.id);
-      addLog(`${pname(p)} の【いれかえ】で手札がまるごと入れかわった!`);
+      addLog(`🌀 ${pname(p)} の【いれかえ】で ${pname(t)} と手札がまるごと入れかわった!`);
       break;
     }
     case 'reset': {
@@ -467,11 +565,11 @@ function applyEffect(p, k) {
       S.hands[p] = [];
       const got = drawTo(p, START_HAND);
       S.newIds = got.map(c => c.id);
-      addLog(`${pname(p)} が【リセット】で手札を引き直した`);
+      addLog(`♻️ ${pname(p)} が【リセット】で手札を引き直した`);
       break;
     }
     case 'bomb': {
-      for (const q of [p, opp]) {
+      for (const q of [p, ...opps]) {
         const lost = [];
         for (let i = 0; i < 2 && S.hands[q].length; i++) { const c = randomTake(S.hands[q]); S.discard.push(c); lost.push(cardLabel(c)); }
         addLog(`💣 ${pname(q)} の${lost.join('') || '(なし)'}がふっとんだ`);
@@ -479,28 +577,28 @@ function applyEffect(p, k) {
       break;
     }
     case 'typhoon': {
-      const all = shuffle([...mine, ...theirs]);
-      S.hands[p] = []; S.hands[opp] = [];
-      all.forEach((c, i) => S.hands[i % 2 ? p : opp].push(c));
+      const order = [p, ...opps];
+      const all = shuffle(order.flatMap(q => S.hands[q]));
+      order.forEach(q => { S.hands[q] = []; });
+      all.forEach((c, i) => S.hands[order[(i + 1) % order.length]].push(c));
       S.newIds = S.hands[p].map(c => c.id);
-      addLog(`🌪️ ${pname(p)} の【たいふう】で手札がぐちゃぐちゃに配り直された!`);
+      addLog(`🌪️ ${pname(p)} の【たいふう】でみんなの手札がぐちゃぐちゃに配り直された!`);
       break;
     }
     case 'robber': {
       let n = 0;
       for (; n < 2 && theirs.length; n++) { const c = randomTake(theirs); mine.push(c); S.newIds.push(c.id); }
-      addLog(`🦹 ${pname(p)} が【ごうとう】で ${pname(opp)} から${n}枚うばった`);
+      addLog(`🦹 ${pname(p)} が【ごうとう】で ${pname(t)} から${n}枚うばった`);
       break;
     }
     case 'reveal': {
-      S.reveal = { p: opp, turns: 3 };   // 相手のターンと、自分の次のターンの終わりまで
-      addLog(`👀 ${pname(opp)} の手札が丸見えに:${theirs.map(cardLabel).join('') || 'なし'}`);
+      S.reveal = { p: t, by: p, left: 2 };   // 使った人の次のターンが終わるまで
+      addLog(`👀 ${pname(t)} の手札が丸見えに:${theirs.map(cardLabel).join('') || 'なし'}`);
       break;
     }
     case 'freeze': {
-      S.skip = S.skip || [false, false];
-      S.skip[opp] = true;
-      addLog(`❄️ ${pname(p)} の【ふぶき】で ${pname(opp)} は次のターン休み`);
+      S.skip[t] = true;
+      addLog(`❄️ ${pname(p)} の【ふぶき】で ${pname(t)} は次のターン休み`);
       break;
     }
     case 'extra': {
@@ -510,33 +608,33 @@ function applyEffect(p, k) {
     }
     case 'snipe': {
       const kinds = [...new Set(theirs.filter(c => isLetter(c.k)).map(c => c.k))];
-      if (!kinds.length) { addLog(`🎯 【ねらいうち】は不発(相手に文字カードがない)`); break; }
+      if (!kinds.length) { addLog(`🎯 【ねらいうち】は不発(${pname(t)} に文字カードがない)`); break; }
       const K = kinds[Math.floor(Math.random() * kinds.length)];
       const hit = theirs.filter(c => c.k === K);
-      S.hands[opp] = theirs.filter(c => c.k !== K);
+      S.hands[t] = theirs.filter(c => c.k !== K);
       S.discard.push(...hit);
-      addLog(`🎯 ${pname(p)} の【ねらいうち】で ${pname(opp)} の「${K}」が${hit.length}枚ぜんぶ捨てられた`);
+      addLog(`🎯 ${pname(p)} の【ねらいうち】で ${pname(t)} の「${K}」が${hit.length}枚ぜんぶ捨てられた`);
       break;
     }
     case 'beg': {
       const lack = missingLetters(mine);
       const cand = theirs.filter(c => lack.includes(c.k));
-      if (!cand.length) { addLog(`🥺 【ねだる】は不発(相手が持っていなかった)`); break; }
+      if (!cand.length) { addLog(`🥺 【ねだる】は不発(${pname(t)} が持っていなかった)`); break; }
       const c = cand[Math.floor(Math.random() * cand.length)];
       theirs.splice(theirs.indexOf(c), 1); mine.push(c); S.newIds = [c.id];
-      addLog(`🥺 ${pname(p)} が【ねだる】で ${pname(opp)} から${cardLabel(c)}をもらった`);
+      addLog(`🥺 ${pname(p)} が【ねだる】で ${pname(t)} から${cardLabel(c)}をもらった`);
       break;
     }
     case 'copy': {
       const prev = S.discard[S.discard.length - 2];   // 一番上はコピー自身なので、その下
-      if (!prev || isLetter(prev.k) || prev.k === 'copy' || prev.k === 'joker') {
+      if (!prev || isLetter(prev.k) || prev.k === 'copy' || prev.k === 'joker' || EFFECTS[prev.k].bad) {
         addLog(`📋 【コピー】は不発(捨て札の一番上が効果カードじゃなかった)`); break;
       }
       addLog(`📋 ${pname(p)} が【コピー】で【${EFFECTS[prev.k].name}】をもう一度発動!`);
       return applyEffect(p, prev.k);
     }
     case 'lottery': {
-      const pool = Object.keys(EFFECTS).filter(k => !['copy', 'lottery', 'joker'].includes(k));
+      const pool = Object.keys(EFFECTS).filter(k => !['copy', 'lottery', 'joker'].includes(k) && !EFFECTS[k].bad);
       const k2 = pool[Math.floor(Math.random() * pool.length)];
       addLog(`🎰 ${pname(p)} の【くじびき】の結果は…【${EFFECTS[k2].name}】!`);
       return applyEffect(p, k2);
@@ -545,26 +643,55 @@ function applyEffect(p, k) {
       addLog(`🤡 ${pname(p)} が【ジョーカー】を捨てた(効果なし)`);
       break;
     }
+    default: {
+      // デメリットカード(のろい・おもり・むしくい)は、捨てると消えるだけ
+      if (EFFECTS[k] && EFFECTS[k].bad) addLog(`${EFFECTS[k].icon} ${pname(p)} が【${EFFECTS[k].name}】を捨てて、身軽になった`);
+      break;
+    }
   }
   return false;
+}
+
+// 途中で部屋を出た人をゲームから外す
+function removePlayer(i) {
+  if (S.gone[i]) return;
+  S.gone[i] = true;
+  S.discard.push(...S.hands[i]); S.hands[i] = [];
+  S.skip[i] = false;
+  if (S.reveal && (S.reveal.p === i || S.reveal.by === i)) S.reveal = null;
+  addLog(`🚪 ${pname(i)} が部屋から出た`);
+  if (S.phase === 'over') return;
+  const left = activePlayers();
+  if (left.length < 2) {
+    S.phase = 'over'; S.winner = left.length ? left[0] : null;
+    if (left.length) addLog(`ほかの人がいなくなったので ${pname(left[0])} の勝ち`);
+    return;
+  }
+  if (S.turn === i) { S.extra = false; endTurn(); }
+  else if (S.phase === 'trade' && S.tradeTo === i) { addLog('とりかえの相手がいなくなった'); afterAction(); }
 }
 
 // プレイヤー p の操作 a を処理する。正しく処理できたら true
 function applyAction(p, a) {
   if (a.type === 'rematch') {
     if (S.phase !== 'over') return false;
-    newGame(S.players, 1 - S.first);
+    const players = S.players.filter((_, i) => !S.gone[i]);
+    if (players.length < 2) return false;
+    newGame(players, (S.first + 1) % players.length);
     return true;
   }
   if (S.phase === 'over' || p !== S.turn) return false;
-  // カードを捨てずにターンを終える
-  if (a.type === 'pass') {
-    if (S.phase !== 'play') return false;
-    recordPlay(p, 'pass', () => {
-      S.again = false;
-      addLog(`${pname(p)} はカードを捨てずにターンを終えた`);
-      endTurn();
-    });
+  // 効果の相手をえらぶ
+  if (a.type === 'target') {
+    if (S.phase !== 'target' || !S.pending || !opponentsOf(p).includes(a.to)) return false;
+    const pend = S.pending;
+    recordPlay(p, pend.card || pend.k, () => {
+      S.pending = null;
+      S.phase = 'play';
+      const waiting = applyEffect(p, pend.k, a.to);
+      checkWin();
+      if (!waiting && S.phase !== 'over') afterAction();
+    }, pend.msgs);
     return true;
   }
   const hand = S.hands[p];
@@ -589,13 +716,14 @@ function applyAction(p, a) {
     return true;
   }
   if (S.phase === 'trade' && a.type === 'trade') {
+    const t = S.tradeTo;
     const give = hand.splice(idx, 1)[0];
     recordPlay(p, 'trade', () => {
-      const theirs = S.hands[1 - p];
+      const theirs = S.hands[t];
       const got = randomTake(theirs);
       theirs.push(give); hand.push(got);
       S.newIds = [got.id];
-      addLog(`${pname(p)} が ${pname(1 - p)} に${cardLabel(give)}を渡して、1枚もらった`);
+      addLog(`${pname(p)} が ${pname(t)} に${cardLabel(give)}を渡して、1枚もらった`);
       afterAction();
     });
     return true;
@@ -603,18 +731,25 @@ function applyAction(p, a) {
   return false;
 }
 
-// 1回の操作で起きたことをまとめて lastPlay に残す(相手の画面でポップアップ表示する)
-function recordPlay(p, k, fn) {
-  S.cur = { id: Math.random().toString(36).slice(2), p, k, msgs: [] };
-  try { fn(); } finally { S.lastPlay = S.cur; S.cur = null; }
+// 1回の操作で起きたことをまとめて lastPlay に残す(全員の画面でポップアップ表示する)
+// 相手えらびで止まったときは、えらび終わるまで表示を待つ
+function recordPlay(p, k, fn, carry) {
+  const prev = S.lastPlay;
+  S.cur = { id: rid(), p, k, msgs: carry ? [...carry] : [] };
+  try { fn(); } finally {
+    if (S.phase === 'target' && S.pending) { S.pending.card = k; S.pending.msgs = S.cur.msgs; S.lastPlay = prev; }
+    else S.lastPlay = S.cur;
+    S.cur = null;
+  }
 }
 
 // ===== 通信(Supabase Realtime Broadcast) =====
 // ホストが状態を持ち、ゲストは操作を送るだけ。ホストが結果を全員に送り返す。
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 let channel = null, roomCode = null, isHost = false, joinTimer = null;
-const GAME_VERSION = 5;   // ルールを変えたら数字を上げる。古いページの人とは遊べないようにする
+const GAME_VERSION = 10;   // ルールを変えたら数字を上げる。古いページの人とは遊べないようにする
 let pendingAct = null;    // ゲストが送ったけど、まだ結果が返ってきていない操作
+let lobbyPlayers = [];    // ゲーム開始前に部屋にいる人
 
 function store(kind, key, val) {
   try { const s = kind === 'l' ? localStorage : sessionStorage; if (val === undefined) return s.getItem(key); s.setItem(key, val); } catch { return null; }
@@ -626,16 +761,16 @@ function connect(code, host) {
   if (!sb) { alert('通信ライブラリを読み込めませんでした。ネット接続を確認してね'); return; }
   roomCode = code; isHost = host;
   store('l', 'bamosName', myName());
+  if (isHost && !S) lobbyPlayers = [{ id: myId, name: myName() }];
   try { history.replaceState(null, '', location.pathname + '?room=' + code); } catch {}
   channel = sb.channel('bamos-' + code, { config: { broadcast: { self: false } } });
   channel.on('broadcast', { event: 'msg' }, ({ payload }) => onMsg(payload));
   channel.subscribe(status => {
     if (status !== 'SUBSCRIBED') return;
     if (isHost) {
-      if (S) send({ t: 'state', s: S, ver: GAME_VERSION }); else showWaiting();
+      if (S) send({ t: 'state', s: S, ver: GAME_VERSION }); else { showWaiting(); sendLobby(); }
     } else {
-      $('waitMsg').textContent = '部屋に接続中…';
-      showWaiting();
+      if (!S) { $('waitMsg').textContent = '部屋に接続中…'; showWaiting(); }
       // 2.5秒ごとに「今の状態の番号」をホストに知らせる。通信が途切れて取りこぼしても、ここで追いつける
       const hello = () => {
         send({ t: 'join', id: myId, name: myName(), ver: GAME_VERSION, v: S ? S.v : -1 });
@@ -648,50 +783,73 @@ function connect(code, host) {
   });
 }
 function send(payload) { channel && channel.send({ type: 'broadcast', event: 'msg', payload }); }
+function sendLobby() { send({ t: 'lobby', players: lobbyPlayers, ver: GAME_VERSION }); renderWaiting(); }
 
 function onMsg(m) {
   if (isHost) {
+    if (m.t === 'leave') {
+      if (!S) { lobbyPlayers = lobbyPlayers.filter(pl => pl.id !== m.id); sendLobby(); return; }
+      const i = S.players.findIndex(pl => pl.id === m.id);
+      if (i >= 0 && !S.gone[i]) { removePlayer(i); publish(); }
+      return;
+    }
     if (m.t === 'join') {
       if (m.ver !== GAME_VERSION) {
         send({ t: 'old', id: m.id });
-        $('waitMsg').textContent = '相手のページが古いバージョンです。相手に再読み込み(Ctrl+F5)してもらってね';
+        $('waitMsg').textContent = '古いバージョンのページの人がいます。再読み込み(Ctrl+F5)してもらってね';
         return;
       }
       if (!S) {
-        newGame([{ id: myId, name: myName() }, { id: m.id, name: m.name }], Math.random() < 0.5 ? 0 : 1);
-        publish();
-      } else if (S.players[1].id === m.id) {
-        if (m.v !== S.v) send({ t: 'state', s: S, ver: GAME_VERSION });   // 相手の画面が古ければ送り直す
+        // ゲーム開始前:部屋のメンバーに加える
+        if (!lobbyPlayers.some(pl => pl.id === m.id)) {
+          if (lobbyPlayers.length >= MAX_PLAYERS) { send({ t: 'full', id: m.id }); return; }
+          lobbyPlayers.push({ id: m.id, name: m.name });
+        }
+        sendLobby();
+        return;
+      }
+      const i = S.players.findIndex(pl => pl.id === m.id);
+      if (i >= 0 && !S.gone[i]) {
+        if (m.v !== S.v) send({ t: 'state', s: S, ver: GAME_VERSION });   // 画面が古ければ送り直す
       } else {
-        send({ t: 'full', id: m.id });
+        send({ t: 'full', id: m.id, started: true });
       }
     } else if (m.t === 'act' && S) {
       const p = S.players.findIndex(pl => pl.id === m.id);
-      if (p < 0) return;
+      if (p < 0 || S.gone[p]) return;
       if (applyAction(p, m.a)) publish(m.aid);
       else send({ t: 'state', s: S, ver: GAME_VERSION, ack: m.aid });   // 処理済みの操作が届いたときなども、最新の状態を返す
     }
   } else {
     if (m.t === 'state') {
       if (m.ver !== GAME_VERSION) { showOldVersion(); return; }
+      if (!m.s.players.some(pl => pl.id === myId)) return;   // 自分が入っていないゲーム
       if (!S || m.s.v >= S.v) {
         S = m.s;
         if (pendingAct && (S.v > pendingAct.v || m.ack === pendingAct.aid)) pendingAct = null;
         render();
       }
+    } else if (m.t === 'lobby') {
+      if (m.ver !== GAME_VERSION) { showOldVersion(); return; }
+      if (S) return;
+      lobbyPlayers = m.players;
+      if (lobbyPlayers.some(pl => pl.id === myId)) { showWaiting(); renderWaiting(); }
+    } else if (m.t === 'leave' && m.host) {
+      leaveNotice('部屋を作った人が部屋から出ました。最初の画面に戻ります');
     } else if (m.t === 'old' && m.id === myId) {
       showOldVersion();
     } else if (m.t === 'full' && m.id === myId) {
       clearInterval(joinTimer);
-      alert('この部屋はもう満員です');
+      alert(m.started ? 'この部屋はもうゲームが始まっています' : 'この部屋はもう満員です(4人まで)');
       location.href = location.pathname;
     }
   }
 }
 
-// 状態を更新したら相手に送り、自分の画面も描き直す
+// 状態を更新したら全員に送り、自分の画面も描き直す
 function publish(ack) {
   S.v++;
+  trimDiscard();
   store('s', 'bamosHost-' + roomCode, JSON.stringify(S));   // ホストがページを再読み込みしても続きから遊べるように
   send({ t: 'state', s: S, ver: GAME_VERSION, ack });
   render();
@@ -701,10 +859,33 @@ function act(a) {
   selectedId = null;
   if (isHost) { if (applyAction(meIdx(), a)) publish(); }
   else {
-    pendingAct = { a, v: S ? S.v : -1, aid: Math.random().toString(36).slice(2) };
+    pendingAct = { a, v: S ? S.v : -1, aid: rid() };
     send({ t: 'act', id: myId, a, aid: pendingAct.aid });
     render();
   }
+}
+
+function startGame() {
+  if (!isHost || S || lobbyPlayers.length < 2) return;
+  newGame(lobbyPlayers.slice(), Math.floor(Math.random() * lobbyPlayers.length));
+  publish();
+}
+
+// 最初の画面(ロビー)に戻る。ほかの人にも退出を知らせる
+function goLobby(ask) {
+  if (ask && S && S.phase !== 'over' && !confirm('ゲームをやめて最初の画面に戻りますか?')) return;
+  try { sessionStorage.removeItem('bamosHost-' + roomCode); } catch {}
+  if (channel) send({ t: 'leave', id: myId, host: isHost });
+  clearInterval(joinTimer);
+  setTimeout(() => { location.href = location.pathname; }, 300);   // 退出の知らせが届くように少し待つ
+}
+let leaveShown = false;
+function leaveNotice(msg) {
+  if (leaveShown) return;
+  leaveShown = true;
+  clearInterval(joinTimer);
+  alert(msg);
+  goLobby(false);
 }
 
 let oldShown = false;
@@ -730,6 +911,7 @@ function cardEl(c, opts = {}) {
   } else {
     const e = EFFECTS[c.k];
     el.classList.add('fx');
+    if (e.bad) el.classList.add('bad');
     el.innerHTML = `<div class="fxicon">${e.icon}</div><div class="fxname">${e.name}</div><div class="fxdesc">${e.desc}</div>`;
   }
   return el;
@@ -738,45 +920,85 @@ function cardEl(c, opts = {}) {
 function showWaiting() {
   $('lobby').classList.add('hidden'); $('game').classList.add('hidden'); $('waiting').classList.remove('hidden');
   $('roomCode').textContent = roomCode;
+  renderWaiting();
+}
+function renderWaiting() {
+  $('playerList').innerHTML = lobbyPlayers.map((pl, i) =>
+    `<span>${i === 0 ? '👑 ' : ''}${escapeHtml(pl.name)}${pl.id === myId ? '(あなた)' : ''}</span>`).join('');
+  const n = lobbyPlayers.length;
+  $('startBtn').classList.toggle('hidden', !isHost);
+  $('startBtn').disabled = n < 2;
+  $('startBtn').textContent = n < 2 ? 'スタート(あと1人必要)' : `${n}人でスタート!`;
+  if (!lobbyPlayers.length) return;
+  $('waitMsg').textContent = isHost
+    ? (n < MAX_PLAYERS ? `いま${n}人(4人まで入れます)。そろったらスタートを押してね` : '4人そろいました!')
+    : `いま${n}人。部屋を作った人がスタートするのを待っています…`;
+}
+
+// 自分から見た席順(自分の次の人から)
+function seatOrder(me) {
+  const n = S.players.length, out = [];
+  for (let d = 1; d < n; d++) out.push((me + d) % n);
+  return out;
 }
 
 function render() {
   if (!S) return;
   $('lobby').classList.add('hidden'); $('waiting').classList.add('hidden'); $('game').classList.remove('hidden');
   document.body.classList.add('ingame');
-  const me = meIdx(), opp = 1 - me;
+  const me = meIdx();
   if (me < 0) return;
   const myTurn = S.turn === me && S.phase !== 'over';
   const myHand = S.hands[me];
   if (!myHand.some(c => c.id === selectedId)) selectedId = null;
+  const choosing = myTurn && S.phase === 'target' && !pendingAct;
 
-  $('oppName').textContent = S.players[opp].name;
-  $('myName').textContent = S.players[me].name + '(あなた)';
-  const oppSeen = S.phase === 'over' || (S.reveal && S.reveal.p === opp);
-  const notes = [];
-  if (S.reveal && S.reveal.p === opp) notes.push('👀 丸見え中');
-  if (S.skip && S.skip[opp]) notes.push('❄️ 次のターン休み');
-  $('oppCount').innerHTML = `手札 ${S.hands[opp].length}枚` + notes.map(n => `<span class="opp-note">${n}</span>`).join('');
+  // 相手たち
+  const box = $('opps'); box.innerHTML = '';
+  const others = seatOrder(me);
+  box.className = 'opps n' + others.length;
+  for (const i of others) {
+    const panel = document.createElement('div');
+    const isTurn = S.turn === i && S.phase !== 'over';
+    panel.className = 'panel opp-panel' + (isTurn ? ' turn' : '') + (S.gone[i] ? ' gone' : '');
+    const seen = S.phase === 'over' || (S.reveal && S.reveal.p === i);
+    const notes = [];
+    if (S.gone[i]) notes.push('🚪 退出');
+    if (S.reveal && S.reveal.p === i) notes.push('👀 丸見え');
+    if (S.skip[i]) notes.push('❄️ 次休み');
+    panel.innerHTML = `<div class="zone-title"><span class="pname">${isTurn ? '▶ ' : ''}${escapeHtml(S.players[i].name)}</span>` +
+      `<span>手札 ${S.hands[i].length}枚${notes.map(n => `<span class="opp-note">${n}</span>`).join('')}</span></div>`;
+    const h = document.createElement('div'); h.className = 'hand opp';
+    const MAXSHOW = 12;
+    S.hands[i].slice(0, MAXSHOW).forEach(c => h.appendChild(cardEl(seen ? c : null)));
+    if (S.hands[i].length > MAXSHOW) h.insertAdjacentHTML('beforeend', `<span class="more">+${S.hands[i].length - MAXSHOW}</span>`);
+    panel.appendChild(h);
+    if (choosing && !S.gone[i]) {
+      panel.classList.add('pick');
+      const b = document.createElement('button'); b.className = 'target-btn';
+      b.textContent = `🎯 ${S.players[i].name} にする`;
+      panel.appendChild(b);
+      panel.onclick = () => act({ type: 'target', to: i });
+    }
+    box.appendChild(panel);
+  }
   $('roomLabel').textContent = '部屋 ' + roomCode;
-
-  // 相手の手札(ゲーム終了時と「まるみえ」中は表向き)
-  const oh = $('oppHand'); oh.innerHTML = '';
-  S.hands[opp].forEach(c => oh.appendChild(cardEl(oppSeen ? c : null)));
 
   renderLastPlay(me);
 
   // 山札と捨て札
-  $('deckView').innerHTML = ''; $('deckView').appendChild(S.deck.length ? cardEl(null) : Object.assign(document.createElement('div'), { className: 'empty' }));
-  $('deckCount').textContent = `山札 ${S.deck.length}`;
+  $('deckView').innerHTML = ''; $('deckView').appendChild(cardEl(null));
+  $('deckCount').textContent = '山札 ∞';
   const top = S.discard[S.discard.length - 1];
   $('discardView').innerHTML = ''; $('discardView').appendChild(top ? cardEl(top) : Object.assign(document.createElement('div'), { className: 'empty' }));
 
   // 自分の手札
   const mh = $('myHand'); mh.innerHTML = '';
   mh.classList.toggle('many', myHand.length > (window.innerWidth < 500 ? 5 : 10));   // 手札が多いときはカードを小さく
+  const canPick = myTurn && (S.phase === 'play' || S.phase === 'trade');
   myHand.forEach(c => {
     const el = cardEl(c);
-    if (myTurn) {
+    if (canPick) {
       el.classList.add('clickable');
       el.onclick = () => { selectedId = selectedId === c.id ? null : c.id; render(); };
     }
@@ -796,57 +1018,73 @@ function render() {
   const jk = jokerCount(myHand);
   if (jk) { const s = document.createElement('span'); s.className = 'joker'; s.textContent = `🤡×${jk}`; pg.appendChild(s); }
   const myNotes = [];
-  if (S.reveal && S.reveal.p === me) myNotes.push('👀 あなたの手札は相手に丸見え');
-  if (S.skip && S.skip[me]) myNotes.push('❄️ 次のターンは休み');
-  $('myName').textContent = S.players[me].name + '(あなた)' + (myNotes.length ? ' ' + myNotes.join(' ') : '');
+  if (S.reveal && S.reveal.p === me) myNotes.push('👀 手札が丸見え');
+  if (S.skip[me]) myNotes.push('❄️ 次のターンは休み');
+  for (const k of Object.keys(EFFECTS)) if (EFFECTS[k].bad && myHand.some(c => c.k === k)) myNotes.push(`${EFFECTS[k].icon} ${EFFECTS[k].short}`);
+  $('myName').textContent = (myTurn ? '▶ ' : '') + S.players[me].name + '(あなた)' + (myNotes.length ? ' ' + myNotes.join(' ') : '');
+  $('myPanel').classList.toggle('turn', myTurn);
 
   // 状況の表示と操作ボタン
   const st = $('status'), bar = $('actionbar');
   st.className = 'status'; bar.innerHTML = '';
   const sel = myHand.find(c => c.id === selectedId);
   const button = (label, onclick, cls) => { const b = document.createElement('button'); b.textContent = label; b.onclick = onclick; if (cls) b.className = cls; bar.appendChild(b); return b; };
+  const desc = text => { const d = document.createElement('span'); d.className = 'desc'; d.textContent = text; bar.appendChild(d); return d; };
+  const turnName = pname(S.turn);
 
   if (S.phase === 'over') {
     st.classList.add('win');
-    st.textContent = S.winner === me ? '🎉 あなたの勝ち!' : `${S.players[S.winner].name} の勝ち…`;
-    if (isHost) button('もう一回', () => act({ type: 'rematch' }));
-    else bar.innerHTML = '<span class="desc">部屋を作った人が「もう一回」を押すと再戦できます</span>';
+    st.textContent = S.winner === null ? 'ゲーム終了' : S.winner === me ? '🎉 あなたの勝ち!' : `${pname(S.winner)} の勝ち…`;
+    const canRematch = activePlayers().length >= 2;
+    if (isHost && canRematch) button('もう一回', () => act({ type: 'rematch' }));
+    button('🏠 ホームに戻る', () => goLobby(false), 'sub');
+    if (isHost && !canRematch) desc('ほかの人がいなくなったので、もう一回はできません');
+    if (!isHost) desc('部屋を作った人が「もう一回」を押すと再戦できます');
+    else desc('部屋を作った人がホームに戻ると、全員ホームに戻ります');
   } else if (!myTurn) {
-    st.textContent = S.again ? `🍚 ${S.players[opp].name} がおかわり中…もう1枚使うのを待っています` : `${S.players[opp].name} の番です…`;
+    st.textContent =
+      S.phase === 'target' ? `🎯 ${turnName} がだれに使うかえらんでいます…` :
+      S.phase === 'trade' ? `🔁 ${turnName} が渡すカードをえらんでいます…` :
+      S.again ? `🍚 ${turnName} がおかわり中…もう1枚使うのを待っています` : `${turnName} の番です…`;
   } else if (pendingAct) {
     st.textContent = '送信中…';
   } else {
     st.classList.add('mine');
-    const msg = {
-      play: S.again ? '🍚 おかわり!もう1枚カードを選んで使ってね' : 'あなたの番:カードを1枚選んで、捨てる or 使う',
-      trade: '【とりかえ】相手に渡すカードを1枚選んでください',
-    }[S.phase];
-    st.textContent = msg;
-    if (!sel && S.phase === 'play') {
-      const d = document.createElement('span'); d.className = 'desc'; d.textContent = 'カードをタップして選ぶか、捨てずにターンを終えることもできます'; bar.appendChild(d);
-    }
-    if (sel) {
-      if (S.phase === 'play') {
-        if (isLetter(sel.k) || sel.k === 'joker') button(`${cardLabel(sel)}を捨てる`, () => act({ type: 'play', cardId: sel.id }));
-        else {
-          button(`【${EFFECTS[sel.k].name}】を使う`, () => act({ type: 'play', cardId: sel.id }));
-          const d = document.createElement('span'); d.className = 'desc'; d.textContent = EFFECTS[sel.k].desc; bar.appendChild(d);
-          if (sel.k === 'combo') {
-            const rest = myHand.filter(c => c.id !== sel.id);
-            d.textContent = COMBOS.map(cb => `${comboHit(rest, cb) ? '✅' : '❌'} ${cb.name}:${cb.desc}`).join(' / ');
+    if (S.phase === 'target') {
+      const name = S.pending ? EFFECTS[S.pending.k].name : '';
+      st.textContent = `🎯【${name}】をだれに使う?上の相手をタップしてね`;
+      if (S.pending) desc(EFFECTS[S.pending.k].desc);
+    } else {
+      st.textContent = S.phase === 'trade'
+        ? `🔁【とりかえ】${pname(S.tradeTo)} に渡すカードを1枚選んでください`
+        : S.again ? '🍚 おかわり!もう1枚カードを選んで使ってね' : 'あなたの番:カードを1枚選んで、捨てる or 使う';
+      if (!sel && S.phase === 'play') desc('カードをタップして選んでね(毎ターン1枚は必ず捨てる or 使う)');
+      if (sel) {
+        if (S.phase === 'play') {
+          if (isLetter(sel.k) || sel.k === 'joker' || EFFECTS[sel.k].bad) {
+            button(`${cardLabel(sel)}を捨てる`, () => act({ type: 'play', cardId: sel.id }));
+            if (!isLetter(sel.k)) desc(EFFECTS[sel.k].desc);
           }
+          else {
+            button(`【${EFFECTS[sel.k].name}】を使う`, () => act({ type: 'play', cardId: sel.id }));
+            const d = desc(EFFECTS[sel.k].desc);
+            if (sel.k === 'combo') {
+              const rest = myHand.filter(c => c.id !== sel.id);
+              d.textContent = COMBOS.map(cb => `${comboHit(rest, cb) ? '✅' : '❌'} ${cb.name}:${cb.desc}`).join(' / ');
+            }
+          }
+        } else if (S.phase === 'trade') {
+          button(`${cardLabel(sel)}を渡す`, () => act({ type: 'trade', cardId: sel.id }));
         }
-      } else if (S.phase === 'trade') {
-        button(`${cardLabel(sel)}を渡す`, () => act({ type: 'trade', cardId: sel.id }));
       }
     }
-    if (S.phase === 'play') button('捨てずにターン終了', () => act({ type: 'pass' }), 'sub');
   }
 
   // ログ
   $('log').innerHTML = S.log.map(l => `<div>${escapeHtml(l)}</div>`).join('');
 }
-// 直前に使われたカードを表示。相手が効果カードを使ったときは大きくポップアップ
+
+// 直前に使われたカードを表示。効果カードのときは全員の画面で大きくポップアップ
 let shownPlayId = undefined, popupTimer = null;
 function renderLastPlay(me) {
   const lp = S.lastPlay, box = $('lastPlay');
@@ -858,7 +1096,8 @@ function renderLastPlay(me) {
     shownPlayId = lp.id;
     return;
   }
-  const verb = isLetter(lp.k) || lp.k === 'joker' ? 'を捨てた' : 'を使った!';
+  const quiet = isLetter(lp.k) || lp.k === 'joker' || (EFFECTS[lp.k] && EFFECTS[lp.k].bad);
+  const verb = quiet ? 'を捨てた' : 'を使った!';
   const label = isLetter(lp.k) ? `「${lp.k}」` : `【${EFFECTS[lp.k].name}】`;
   const msgs = lp.msgs.map(m => `<div>・${escapeHtml(m)}</div>`).join('');
   box.className = 'last ' + (lp.p === me ? 'me' : 'opp');
@@ -871,8 +1110,9 @@ function renderLastPlay(me) {
   if (shownPlayId === undefined) { shownPlayId = lp.id; return; }   // 開いた直後は出さない
   if (lp.id === shownPlayId) return;
   shownPlayId = lp.id;
-  if (lp.p === me || isLetter(lp.k)) return;   // 相手の効果カードだけポップアップ
+  if (quiet) return;   // 効果カードのときだけポップアップ(自分が使ったときも)
   const pb = $('popbox');
+  pb.className = 'popbox ' + (lp.p === me ? 'me' : 'opp');
   pb.innerHTML = `<h2><b>${escapeHtml(who)}</b> が ${label}${verb}</h2>`;
   pb.appendChild(cardEl({ k: lp.k }));
   const m = document.createElement('div'); m.className = 'msgs'; m.innerHTML = msgs; pb.appendChild(m);
@@ -883,7 +1123,7 @@ function renderLastPlay(me) {
 }
 $('popup').onclick = () => $('popup').classList.add('hidden');
 
-const escapeHtml = s => s.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const escapeHtml = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 // ===== ロビーの操作 =====
 function makeCode() {
@@ -892,6 +1132,9 @@ function makeCode() {
 }
 $('nameInput').value = store('l', 'bamosName') || '';
 $('createBtn').onclick = () => connect(makeCode(), true);
+$('startBtn').onclick = startGame;
+$('backBtn').onclick = () => goLobby(false);
+$('leaveBtn').onclick = () => goLobby(true);
 $('joinBtn').onclick = () => {
   const code = $('codeInput').value.trim().toUpperCase();
   if (code.length !== 4) { alert('4文字の部屋コードを入れてね'); return; }
@@ -900,18 +1143,43 @@ $('joinBtn').onclick = () => {
 $('copyBtn').onclick = async () => {
   const url = location.origin + location.pathname + '?room=' + roomCode;
   try { await navigator.clipboard.writeText(url); $('copyBtn').textContent = 'コピーしました!'; }
-  catch { prompt('このリンクを相手に送ってね', url); }
+  catch { prompt('このリンクを友達に送ってね', url); }
 };
-$('fxList').innerHTML = '<b>効果カード</b><ul>' +
-  Object.values(EFFECTS).map(e => `<li>${e.icon} <b>${e.name}</b>(${e.n}枚):${e.desc}</li>`).join('') + '</ul>' +
-  `<span class="muted">文字カードは各${LETTER_COPIES}枚。</span>`;
+// ===== カード一覧(出る確率)の画面 =====
+function openCards() {
+  const rows = [
+    ...LETTERS.map(L => ({ k: L, w: LETTER_WEIGHT, name: `「${L}」`, desc: '文字カード。6種類そろえたら勝ち', type: '文字' })),
+    ...Object.entries(EFFECTS).map(([k, e]) => ({ k, w: e.w, name: e.name, desc: e.desc, type: e.bad ? 'デメリット' : (k === 'joker' ? 'とくべつ' : '効果') })),
+  ];
+  const groups = ['文字', '効果', 'とくべつ', 'デメリット'];
+  const sum = t => rows.filter(r => r.type === t).reduce((a, r) => a + r.w, 0);
+  let html = `<h2>📋 カード一覧(1枚引くときに出る確率)</h2>
+    <p class="muted">山札は無限。1枚引くたびに、この確率で完全ランダムに出ます。<br>
+    合計:文字 ${chance(sum('文字'))}% / 効果 ${chance(sum('効果'))}% / とくべつ ${chance(sum('とくべつ'))}% / デメリット ${chance(sum('デメリット'))}%</p>`;
+  for (const g of groups) {
+    const list = rows.filter(r => r.type === g).sort((a, b) => b.w - a.w);
+    if (!list.length) continue;
+    html += `<h3 class="grp ${g === 'デメリット' ? 'bad' : ''}">${g}カード</h3><table class="ctable"><tbody>` +
+      list.map(r => `<tr><td class="ci" data-k="${r.k}"></td><td class="cn">${escapeHtml(r.name)}</td>` +
+        `<td class="cp"><div class="bar"><i style="width:${Math.min(100, chance(r.w) * 10)}%"></i></div>${chance(r.w)}%</td>` +
+        `<td class="cd">${escapeHtml(r.desc)}</td></tr>`).join('') + '</tbody></table>';
+  }
+  html += '<button id="cardsClose" class="sub" style="width:100%;margin-top:12px">閉じる</button>';
+  const box = $('cardsBox'); box.innerHTML = html;
+  box.querySelectorAll('.ci').forEach(td => td.appendChild(cardEl({ k: td.dataset.k }, { small: true })));
+  $('cardsModal').classList.remove('hidden');
+  $('cardsClose').onclick = () => $('cardsModal').classList.add('hidden');
+}
+$('cardsBtn').onclick = openCards;
+$('cardsBtn2').onclick = openCards;
+$('cardsModal').onclick = e => { if (e.target.id === 'cardsModal') $('cardsModal').classList.add('hidden'); };
 
 // 招待リンク(?room=XXXX)で開いたとき
 const urlRoom = new URLSearchParams(location.search).get('room');
 if (urlRoom) {
   const code = urlRoom.toUpperCase();
   const saved = store('s', 'bamosHost-' + code);
-  if (saved) { S = JSON.parse(saved); connect(code, true); render(); }   // ホストの再読み込み
+  if (saved) { S = JSON.parse(saved); lobbyPlayers = S.players; connect(code, true); render(); }   // ホストの再読み込み
   else $('codeInput').value = code;
 }
 </script>
